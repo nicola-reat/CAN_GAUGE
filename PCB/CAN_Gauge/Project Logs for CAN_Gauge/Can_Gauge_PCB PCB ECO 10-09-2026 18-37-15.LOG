@@ -1,0 +1,5 @@
+Added Component: Designator=J2(MOLEX_430450817)
+Add component (AddParameter): Name = "Manufacturer"; Value = "Molex"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PartNumber"; Value = "43045-0817"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = "43045-0817"; VariantName = "[No Variations]"
+Added Class: Name=Connector

@@ -1,0 +1,15 @@
+Connector:
+
+[POWER]
++12v
+Ign (not used) Jump with 0ohm - 12v
+GND
+
+[COMUNICATION]
+CANH
+CANL
+
+[SIGNAL]
+GND
+5V
+SENS 

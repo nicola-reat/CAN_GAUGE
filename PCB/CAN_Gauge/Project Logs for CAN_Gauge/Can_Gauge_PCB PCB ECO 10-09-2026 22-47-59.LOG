@@ -1,0 +1,15 @@
+Removed Pin From Net: NetName=3V3 Pin=C16-1
+Removed Pin From Net: NetName=3V3 Pin=C17-1
+Removed Pin From Net: NetName=3V3 Pin=C18-1
+Removed Pin From Net: NetName=3V3 Pin=R23-2
+Removed Pin From Net: NetName=3V3 Pin=U5-2
+Change Component Designator: OldDesignator=DTR NewDesignator=TP5
+Change Component Designator: OldDesignator=GND NewDesignator=TP1
+Change Component Designator: OldDesignator=RTS NewDesignator=TP2
+Change Component Designator: OldDesignator=RX NewDesignator=TP4
+Change Component Designator: OldDesignator=TX NewDesignator=TP3
+Added Pin To Net: NetName=+3V3 Pin=C16-1
+Added Pin To Net: NetName=+3V3 Pin=C17-1
+Added Pin To Net: NetName=+3V3 Pin=C18-1
+Added Pin To Net: NetName=+3V3 Pin=R23-2
+Added Pin To Net: NetName=+3V3 Pin=U5-2

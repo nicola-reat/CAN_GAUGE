@@ -1,0 +1,12 @@
+Removed Pin From Net: NetName=CAN0_IC_P Pin=R8-1
+Removed Pin From Net: NetName=CAN0_IC_N Pin=SW1-1
+Removed Member From Class: ClassName=Mcu Member=R13
+Removed Member From Class: ClassName=Mcu Member=R14
+Added Pin To Net: NetName=CAN0_P Pin=R8-1
+Added Pin To Net: NetName=CAN0_N Pin=SW1-1
+Added Member To Class: ClassName=CAN Member=Component R9 CRCW060310K0FKEA
+Added Member To Class: ClassName=Sensor Member=Component R10 CRCW060310K0FKEA
+Added Member To Class: ClassName=Sensor Member=Component R12 CRCW06030000Z0EAC
+Added Member To Class: ClassName=Mcu Member=Component R15 CRCW060310K0FKEA
+Added Member To Class: ClassName=Mcu Member=Component R16 RC0603FR-07560RL
+Added Member To Class: ClassName=Mcu Member=Component R19 Resistor

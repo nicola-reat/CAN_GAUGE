@@ -1,0 +1,5 @@
+Added Component: Designator=J3(MOLEX_5051101892)
+Add component (AddParameter): Name = "Manufacturer"; Value = "Molex"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PartNumber"; Value = "5051101892"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = "5051101892"; VariantName = "[No Variations]"
+Added Class: Name=Display

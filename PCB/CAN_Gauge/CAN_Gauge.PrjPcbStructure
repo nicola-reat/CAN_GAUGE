@@ -1,0 +1,6 @@
+Record=TopLevelDocument|FileName=CAN.SchDoc|SheetNumber=2
+Record=NoMainPathDocument|SourceDocument=CAN.SchDoc|FileName=Connector.SchDoc|SheetNumber=5
+Record=NoMainPathDocument|SourceDocument=CAN.SchDoc|FileName=Display.SchDoc|SheetNumber=6
+Record=NoMainPathDocument|SourceDocument=CAN.SchDoc|FileName=Mcu.SchDoc|SheetNumber=4
+Record=NoMainPathDocument|SourceDocument=CAN.SchDoc|FileName=PWR.SchDoc|SheetNumber=1
+Record=NoMainPathDocument|SourceDocument=CAN.SchDoc|FileName=Sensor.SchDoc|SheetNumber=3

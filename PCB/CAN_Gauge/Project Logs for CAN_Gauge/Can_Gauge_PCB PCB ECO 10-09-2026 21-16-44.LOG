@@ -1,0 +1,57 @@
+Removed Pin From Net: NetName=LD_STATUS Pin=U5-35
+Added Component: Designator=R21(RESC1608X06M)
+Add component (AddParameter): Name = "Case"; Value = "0603"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer"; Value = "Vishay"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PartNumber"; Value = "CRCW06030000Z0EAC"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = "0R"; VariantName = "[No Variations]"
+Added Component: Designator=R22(RESC1608X06M)
+Add component (AddParameter): Name = "Case"; Value = "0603"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer"; Value = "Vishay"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PartNumber"; Value = "CRCW06030000Z0EAC"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = "0R"; VariantName = "[No Variations]"
+Added Component: Designator=R23(RESC1608X06M)
+Add component (AddParameter): Name = "Case"; Value = "0603"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer"; Value = "Vishay"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "PartNumber"; Value = "CRCW060310K0FKEA"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "SMD/PTH"; Value = "SMD"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = "10K"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=+3V3 Pin=J3-1
+Added Pin To Net: NetName=GND Pin=J3-3
+Added Pin To Net: NetName=3V3 Pin=R23-2
+Added Pin To Net: NetName=MCU_GPIO38 Pin=R21-1
+Added Pin To Net: NetName=MCU_GPIO38 Pin=U5-31
+Added Net: Name=MCU_GPIO38
+Added Pin To Net: NetName=MCU_GPIO45 Pin=R22-1
+Added Pin To Net: NetName=MCU_GPIO45 Pin=U5-26
+Added Net: Name=MCU_GPIO45
+Added Pin To Net: NetName=MCU_LCD_BL Pin=J3-2
+Added Pin To Net: NetName=MCU_LCD_BL Pin=U5-6
+Added Net: Name=MCU_LCD_BL
+Added Pin To Net: NetName=MCU_LCD_CS Pin=J3-9
+Added Pin To Net: NetName=MCU_LCD_CS Pin=R23-1
+Added Pin To Net: NetName=MCU_LCD_CS Pin=U5-32
+Added Net: Name=MCU_LCD_CS
+Added Pin To Net: NetName=MCU_LCD_DC Pin=J3-7
+Added Pin To Net: NetName=MCU_LCD_DC Pin=U5-34
+Added Net: Name=MCU_LCD_DC
+Added Pin To Net: NetName=MCU_LCD_MISO Pin=J3-6
+Added Pin To Net: NetName=MCU_LCD_MISO Pin=U5-35
+Added Net: Name=MCU_LCD_MISO
+Added Pin To Net: NetName=MCU_LCD_MOSI Pin=J3-5
+Added Pin To Net: NetName=MCU_LCD_MOSI Pin=U5-38
+Added Net: Name=MCU_LCD_MOSI
+Added Pin To Net: NetName=MCU_LCD_RST Pin=J3-8
+Added Pin To Net: NetName=MCU_LCD_RST Pin=U5-33
+Added Net: Name=MCU_LCD_RST
+Added Pin To Net: NetName=MCU_LCD_SCLK Pin=J3-4
+Added Pin To Net: NetName=MCU_LCD_SCLK Pin=U5-39
+Added Net: Name=MCU_LCD_SCLK
+Added Pin To Net: NetName=NetJ3_10 Pin=J3-10
+Added Pin To Net: NetName=NetJ3_10 Pin=R21-2
+Added Net: Name=NetJ3_10
+Added Pin To Net: NetName=NetJ3_11 Pin=J3-11
+Added Pin To Net: NetName=NetJ3_11 Pin=R22-2
+Added Net: Name=NetJ3_11
+Added Member To Class: ClassName=Display Member=Component R21 CRCW06030000Z0EAC
+Added Member To Class: ClassName=Display Member=Component R22 CRCW06030000Z0EAC
+Added Member To Class: ClassName=Mcu Member=Component R23 CRCW060310K0FKEA

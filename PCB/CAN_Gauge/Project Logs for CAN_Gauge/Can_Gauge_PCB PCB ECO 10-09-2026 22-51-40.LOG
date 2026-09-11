@@ -1,0 +1,7 @@
+Removed Pin From Net: NetName=3V3 Pin=R17-2
+Added Pin To Net: NetName=+3V3 Pin=R17-2
+Add Class Member: Failed to add class member : Component TP1 Test_Point
+Add Class Member: Failed to add class member : Component TP2 Test_Point
+Add Class Member: Failed to add class member : Component TP3 Test_Point
+Add Class Member: Failed to add class member : Component TP4 Test_Point
+Add Class Member: Failed to add class member : Component TP5 Test_Point
