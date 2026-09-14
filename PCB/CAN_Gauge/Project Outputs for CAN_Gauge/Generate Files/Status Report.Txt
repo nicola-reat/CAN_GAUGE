@@ -1,0 +1,13 @@
+Output: NC Drill Files
+Type  : NC Drill
+From  : PCB Document [Can_Gauge_PCB.PcbDoc]
+   Generated File[Can_Gauge_PCB-RoundHoles.TXT]
+   Generated File[Can_Gauge_PCB-SlotHoles.TXT]
+   Generated File[Can_Gauge_PCB.LDP]
+   Generated File[Can_Gauge_PCB.DRR]
+
+
+Files Generated   : 4
+Documents Printed : 0
+
+Finished Output Generation At 16:43:00 On 14/09/2026

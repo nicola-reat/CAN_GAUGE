@@ -1,0 +1,9 @@
+Change Value of Parameter Manufacturer in Part D4 Old=Littelfuse New=Onsemi
+Change Value of Parameter PartNumber in Part D4 Old=SM712-02HTG New=SZNUP2105LT1G
+Change Value of Parameter Value in Part D4 Old=SM712-02HTG New=SZNUP2105LT1G
+Change Value of Parameter Manufacturer in Part L2 Old=Murata New=TDK
+Change Value of Parameter PartNumber in Part L2 Old=BLM18HB331SN1D New=MMZ1608Q331BTD25
+Change Value of Parameter Value in Part L2 Old=BLM18HB331SN1D New=MMZ1608Q331BTD25
+Change Value of Parameter Manufacturer in Part L3 Old=Murata New=TDK
+Change Value of Parameter PartNumber in Part L3 Old=BLM18HB331SN1D New=MMZ1608Q331BTD25
+Change Value of Parameter Value in Part L3 Old=BLM18HB331SN1D New=MMZ1608Q331BTD25

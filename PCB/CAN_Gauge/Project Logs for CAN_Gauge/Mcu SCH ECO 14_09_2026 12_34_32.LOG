@@ -1,0 +1,15 @@
+Change Value of Parameter PartNumber in Part C16 Old=GCJ31CR71A106MA13L New=C1206C106K4RAC7800
+Change Value of Parameter Voltage in Part C16 Old=10V New=16V
+Change Value of Parameter Manufacturer in Part D5 Old=Littelfuse New=Semtech
+Change Value of Parameter PartNumber in Part D5 Old=SM712-02HTG New=SM712.TCT
+Change Value of Parameter Value in Part D5 Old=SM712-02HTG New=SM712.TCT
+Change Value of Parameter Manufacturer in Part D6 Old=Nexperia New=Diodes Incorporated
+Change Value of Parameter PartNumber in Part D6 Old=PMEG4010EGWX New=1N5819HW-7-F
+Change Value of Parameter Value in Part D6 Old=PMEG4010EGWX New=1N5819HW-7-F
+Change Value of Parameter Manufacturer in Part Q1 Old=Onsemi New=Nexperia
+Change Value of Parameter PartNumber in Part Q1 Old=2N7002LT3G New=NX7002AKVL
+Change Value of Parameter Value in Part Q1 Old=2N7002LT3G New=NX7002AKVL
+Change Value of Parameter Manufacturer in Part Q2 Old=Onsemi New=Nexperia
+Change Value of Parameter PartNumber in Part Q2 Old=2N7002LT3G New=NX7002AKVL
+Change Value of Parameter Value in Part Q2 Old=2N7002LT3G New=NX7002AKVL
+Change Value of Parameter PartNumber in Part R16 Old=RC0603FR-07560RL New=CRCW0603560RJNEAC
