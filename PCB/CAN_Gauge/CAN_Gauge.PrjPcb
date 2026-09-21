@@ -38,12 +38,13 @@ OutputPath=
 LogFolderPath=
 ManagedProjectGUID=
 IncludeDesignInRelease=0
-CrossRefSheetStyle=1
-CrossRefLocationStyle=1
+CrossRefSheetStyle=2
+CrossRefLocationStyle=0
 CrossRefPorts=3
 CrossRefCrossSheets=1
 CrossRefSheetEntries=0
 CrossRefFollowFromMainSettings=1
+CurrentVariant=V1
 
 [Preferences]
 PrefsVaultGUID=
@@ -234,7 +235,15 @@ ClassGenCCAutoRoomEnabled=0
 ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
-DocumentUniqueId=
+DocumentUniqueId=BSKYSATG
+
+[ProjectVariant1]
+UniqueId=187fdb80-adc9-4fa4-a426-fc407ac6f845
+Description=V1
+AllowFabrication=0
+ParameterCount=0
+VariationCount=0
+ParamVariationCount=0
 
 [GeneratedDocument1]
 DocumentPath=Project Outputs for CAN_Gauge\BOM\Bill of Materials-CAN_Gauge.xlsx
@@ -421,30 +430,38 @@ DocumentPath=Project Outputs for CAN_Gauge\Generate Files\ODB\odb\steps\pcb\netl
 DItemRevisionGUID=
 
 [GeneratedDocument47]
-DocumentPath=Project Outputs for CAN_Gauge\Generate Files\Pick Place\Pick Place for Can_Gauge_PCB.csv
+DocumentPath=Project Outputs for CAN_Gauge\Generate Files\Pick Place\Pick Place for Can_Gauge_PCB(V1).csv
 DItemRevisionGUID=
 
 [GeneratedDocument48]
-DocumentPath=Project Outputs for CAN_Gauge\Generate Files\Pick Place\Pick Place for Can_Gauge_PCB.txt
+DocumentPath=Project Outputs for CAN_Gauge\Generate Files\Pick Place\Pick Place for Can_Gauge_PCB(V1).txt
 DItemRevisionGUID=
 
 [GeneratedDocument49]
-DocumentPath=Project Outputs for CAN_Gauge\Generate Files\ODB\odb\steps\pcb\profile
+DocumentPath=Project Outputs for CAN_Gauge\Generate Files\Pick Place\Pick Place for Can_Gauge_PCB.csv
 DItemRevisionGUID=
 
 [GeneratedDocument50]
-DocumentPath=Project Outputs for CAN_Gauge\Generate Files\ODB\odb\steps\pcb\stephdr
+DocumentPath=Project Outputs for CAN_Gauge\Generate Files\Pick Place\Pick Place for Can_Gauge_PCB.txt
 DItemRevisionGUID=
 
 [GeneratedDocument51]
-DocumentPath=Project Outputs for CAN_Gauge\Generate Files\ODB\odb\steps\pcb\layers\drill_non-plated_bottom_layer-top_layer\tools
+DocumentPath=Project Outputs for CAN_Gauge\Generate Files\ODB\odb\steps\pcb\profile
 DItemRevisionGUID=
 
 [GeneratedDocument52]
-DocumentPath=Project Outputs for CAN_Gauge\Generate Files\ODB\odb\steps\pcb\layers\drill_plated_bottom_layer-top_layer\tools
+DocumentPath=Project Outputs for CAN_Gauge\Generate Files\ODB\odb\steps\pcb\stephdr
 DItemRevisionGUID=
 
 [GeneratedDocument53]
+DocumentPath=Project Outputs for CAN_Gauge\Generate Files\ODB\odb\steps\pcb\layers\drill_non-plated_bottom_layer-top_layer\tools
+DItemRevisionGUID=
+
+[GeneratedDocument54]
+DocumentPath=Project Outputs for CAN_Gauge\Generate Files\ODB\odb\steps\pcb\layers\drill_plated_bottom_layer-top_layer\tools
+DItemRevisionGUID=
+
+[GeneratedDocument55]
 DocumentPath=Project Outputs for CAN_Gauge\Generate Files\ODB\odb\steps\pcb\layers\rout\tools
 DItemRevisionGUID=
 
@@ -836,6 +853,11 @@ OutputName10=Report Single Pin Nets
 OutputDocumentPath10=
 OutputVariantName10=[No Variations]
 OutputDefault10=0
+OutputType11=BoasTools
+OutputName11=BoasTools Html BOM
+OutputDocumentPath11=
+OutputVariantName11=[No Variations]
+OutputDefault11=0
 
 [OutputGroup7]
 Name=Other Outputs

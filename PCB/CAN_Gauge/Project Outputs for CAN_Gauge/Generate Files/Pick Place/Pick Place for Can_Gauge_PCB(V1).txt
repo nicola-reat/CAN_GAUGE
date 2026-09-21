@@ -1,13 +1,13 @@
 Altium Designer Pick and Place Locations
-C:\Git\CAN_GAUGE\PCB\CAN_Gauge\Project Outputs for CAN_Gauge\Generate Files\Pick Place\Pick Place for Can_Gauge_PCB.txt
+C:\Users\Reatn\Desktop\Progetti\CAN_GAUGE\PCB\CAN_Gauge\Project Outputs for CAN_Gauge\Generate Files\Pick Place\Pick Place for Can_Gauge_PCB(V1).txt
 
 ========================================================================================================================
 File Design Information:
 
-Date:       14/09/26
-Time:       16:42
-Revision:   8acb81aac7ca50c56addfd01f7c8609a67be1edb
-Variant:    No variations
+Date:       21/09/26
+Time:       14:40
+Revision:   5cd259d01902c53505795f0b447507f558d33dad
+Variant:    V1
 Units used: mm
 
 Designator Comment            Layer       Footprint                    Center-X(mm) Center-Y(mm) Rotation Description                                                                                                                     
@@ -62,8 +62,8 @@ D4         SM712-02HTG        TopLayer    SOT95P240X120-3N             -10.6680 
 D3         Diode              TopLayer    ONSC-SMB-2                   19.1770      -12.5730     270      ""                                                                                                                              
 D2         Diode_Schottky     TopLayer    SODFL360X130-2M_-AC          18.0340      6.3500       0        ""                                                                                                                              
 D1         Diode_Schottky     TopLayer    SODFL360X130-2M_-AC          23.1140      -6.2230      270      ""                                                                                                                              
-C18        C0603C104K5RACTU   BottomLayer CAPC1608X09M                 15.4940      12.4090      90       C0603C104K5RACTU                                                                                                                
-C17        C0603C104K5RACTU   BottomLayer CAPC1608X09M                 13.7160      12.4460      90       C0603C104K5RACTU                                                                                                                
+C18        C0603C104K5RACTU   BottomLayer CAPC1608X09M                 15.4940      12.8270      90       C0603C104K5RACTU                                                                                                                
+C17        C0603C104K5RACTU   BottomLayer CAPC1608X09M                 13.7160      12.8270      90       C0603C104K5RACTU                                                                                                                
 C16        GCJ31CR71A106MA13L BottomLayer CAPC3216X16M                 11.1760      11.4300      90       GCJ31CR71A106MA13L                                                                                                              
 C15        C0603C105K8RACTU   TopLayer    CAPC1608X09M                 5.2070       9.0170       90       C0603C105K8RACTU                                                                                                                
 C14        ""                 TopLayer    CAPC1608X09M                 2.6670       8.7550       90       ""                                                                                                                              

@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------------------------------------------------------------
-NCDrill File Report For: Can_Gauge_PCB.PcbDoc   14/09/2026  16:42:59
+NCDrill File Report For: Can_Gauge_PCB.PcbDoc   21/09/2026  14:40:45
 ----------------------------------------------------------------------------------------------------------------------------------
 
 Layer Pair : Top Layer to Bottom Layer
@@ -8,8 +8,8 @@ ASCII SlotHoles File : Can_Gauge_PCB-SlotHoles.TXT
 
 Tool       Hole Size               Hole Tolerance               Hole Type       Hole Count   Plated         Tool Travel
 ----------------------------------------------------------------------------------------------------------------------------------
-T1      0.2mm (8mil)                                              Round             12        PTH        14.75mm (0.58inch)
-T2      0.3mm (12mil)                                             Round             96        PTH        338.45mm (13.32inch)
+T1      0.2mm (8mil)                                              Round             12        PTH        13.35mm (0.53inch)
+T2      0.3mm (12mil)                                             Round             96        PTH        343.06mm (13.51inch)
 T3      0.6mm (24mil)                                             Slot              4         PTH        37.57mm (1.48inch)
 T4      0.65mm (26mil)                                            Round             2         NPTH       5.78mm (0.23inch)
 T5      2.464mm (97mil)                                           Round             2         NPTH       13.31mm (0.52inch)
@@ -17,4 +17,4 @@ T6      2.5mm (98mil)           +0.1mm (4mil)                     Round         
 ----------------------------------------------------------------------------------------------------------------------------------
 Totals                                                                              119
 
-Total Processing Time (hh:mm:ss) : 00:00:01
+Total Processing Time (hh:mm:ss) : 00:00:00
