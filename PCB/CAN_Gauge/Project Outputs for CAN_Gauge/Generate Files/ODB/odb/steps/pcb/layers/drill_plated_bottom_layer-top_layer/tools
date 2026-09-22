@@ -8,22 +8,12 @@ TOOLS {
     MIN_TOL=0
     MAX_TOL=0
     BIT=
-    FINISH_SIZE=199.9996
-    DRILL_SIZE=199.9996
-}
-
-TOOLS {
-    NUM=2
-    TYPE=VIA
-    MIN_TOL=0
-    MAX_TOL=0
-    BIT=
     FINISH_SIZE=299.9994
     DRILL_SIZE=299.9994
 }
 
 TOOLS {
-    NUM=3
+    NUM=2
     TYPE=PLATED
     MIN_TOL=0
     MAX_TOL=0
