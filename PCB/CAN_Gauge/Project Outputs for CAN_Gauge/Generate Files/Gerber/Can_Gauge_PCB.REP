@@ -178,6 +178,7 @@ Generating : Bottom Layer
 
 
 Used DCodes :
+    D11
     D12
     D14
     D31
@@ -193,7 +194,6 @@ Used DCodes :
     D48
     D49
     D50
-    D51
     D52
     D54
     D55
@@ -204,10 +204,10 @@ Used DCodes :
 *************************************************************
 
 *************************************************************
-Generating : Int2 (PWR)
+Generating : Int2 
       File : Can_Gauge_PCB.G2
 
-    Adding Layer      : Int2 (PWR)
+    Adding Layer      : Int2 
 
     Adding Layer      : Multi-Layer
 
@@ -224,10 +224,10 @@ Used DCodes :
 *************************************************************
 
 *************************************************************
-Generating : Int1 (GND)
+Generating : Int1 
       File : Can_Gauge_PCB.G1
 
-    Adding Layer      : Int1 (GND)
+    Adding Layer      : Int1 
 
     Adding Layer      : Multi-Layer
 

@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------------------------------------------------------------
-NCDrill File Report For: Can_Gauge_PCB.PcbDoc   22/09/2026  10:05:00
+NCDrill File Report For: Can_Gauge_PCB.PcbDoc   22/09/2026  12:19:10
 ----------------------------------------------------------------------------------------------------------------------------------
 
 Layer Pair : Top Layer to Bottom Layer
@@ -8,7 +8,7 @@ ASCII SlotHoles File : Can_Gauge_PCB-SlotHoles.TXT
 
 Tool       Hole Size               Hole Tolerance               Hole Type       Hole Count   Plated         Tool Travel
 ----------------------------------------------------------------------------------------------------------------------------------
-T1      0.3mm (12mil)                                             Round             108       PTH        372.18mm (14.65inch)
+T1      0.3mm (12mil)                                             Round             108       PTH        370.45mm (14.58inch)
 T2      0.6mm (24mil)                                             Slot              4         PTH        37.57mm (1.48inch)
 T3      0.65mm (26mil)                                            Round             2         NPTH       5.78mm (0.23inch)
 T4      2.464mm (97mil)                                           Round             2         NPTH       13.31mm (0.52inch)

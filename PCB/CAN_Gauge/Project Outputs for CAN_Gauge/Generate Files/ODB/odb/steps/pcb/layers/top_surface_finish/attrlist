@@ -12,6 +12,6 @@ UNITS=MM
 .out_y_scale = 1.000000
 .out_comp = 0.000000
 .et_adjacency = 508.000000
-.layer_dielectric = 0.01999
+.layer_dielectric = 0.02
 .comment = PbSn
 
