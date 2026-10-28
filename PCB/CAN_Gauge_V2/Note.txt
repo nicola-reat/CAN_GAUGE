@@ -1,0 +1,7 @@
+Modificare segnali USBDP E USBDN (Nella v1 sono invertiti)
+Verificare posizionamento vicino ai fori di fissaggio (tvs sot23 molto vicino)
+Modificare testpoint programmazione con 1mm diametro (non vengono mai usati)
+Implementare 4 sensori se è fattibile altrimenti 2 
+Resistenza 120 ohm selezionabile dal software
+Implementare display integrando tutto in un unico cs? fattibile?
+Rimuovere diodo prima dei condensatori 5v. (Alla peggio inserirlo dopo i condensatori)
