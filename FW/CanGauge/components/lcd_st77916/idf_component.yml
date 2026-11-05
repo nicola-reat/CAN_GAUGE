@@ -1,0 +1,5 @@
+dependencies:
+  idf: ">=5.2"
+  espressif/esp_lcd_st77916:
+    version: "^2.0.2"
+    public: true
