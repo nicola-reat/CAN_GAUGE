@@ -43,6 +43,11 @@ BO_ 1605 CMD_DASHBOARD: 8 PC
  SG_ FileCrc32 m17 : 8|32@1+ (1,0) [0|4294967295] "" DASHBOARD
  SG_ BlockNumber m18 : 8|16@1+ (1,0) [0|65535] "" DASHBOARD
  SG_ BlockLength m18 : 24|16@1+ (1,0) [0|65535] "bytes" DASHBOARD
+ SG_ ReadParam m48 : 8|8@1+ (1,0) [0|255] "" DASHBOARD
+ SG_ ReadIndex m48 : 16|8@1+ (1,0) [0|255] "" DASHBOARD
+ SG_ WriteParam m49 : 8|8@1+ (1,0) [0|255] "" DASHBOARD
+ SG_ WriteIndex m49 : 16|8@1+ (1,0) [0|255] "" DASHBOARD
+ SG_ WriteValue m49 : 32|32@1+ (1,0) [0|4294967295] "" DASHBOARD
 
 BO_ 1733 REPLY_DASHBOARD: 8 DASHBOARD
  SG_ MsgType M : 0|8@1+ (1,0) [0|255] "" PC
@@ -66,6 +71,36 @@ BO_ 1733 REPLY_DASHBOARD: 8 DASHBOARD
  SG_ AckStatus m146 : 24|8@1+ (1,0) [0|255] "" PC
  SG_ FinishStatus m147 : 8|8@1+ (1,0) [0|255] "" PC
  SG_ BootStatus m149 : 8|8@1+ (1,0) [0|255] "" PC
+ SG_ UptimeSec m160 : 8|32@1+ (1,0) [0|4294967295] "s" PC
+ SG_ ResetCode m160 : 40|8@1+ (1,0) [0|255] "" PC
+ SG_ CanTxErrors m160 : 48|8@1+ (1,0) [0|255] "" PC
+ SG_ CanRxErrors m160 : 56|8@1+ (1,0) [0|255] "" PC
+ SG_ TempC m161 : 8|8@1- (1,0) [-128|127] "C" PC
+ SG_ BuildYear m161 : 16|8@1+ (1,0) [0|255] "year-2000" PC
+ SG_ BuildMonth m161 : 24|8@1+ (1,0) [0|255] "" PC
+ SG_ BuildDay m161 : 32|8@1+ (1,0) [0|255] "" PC
+ SG_ BuildHour m161 : 40|8@1+ (1,0) [0|255] "" PC
+ SG_ BuildMinute m161 : 48|8@1+ (1,0) [0|255] "" PC
+ SG_ FlashMb m161 : 56|8@1+ (1,0) [0|255] "MB" PC
+ SG_ GitHash m162 : 8|32@1+ (1,0) [0|4294967295] "" PC
+ SG_ GitDirty m162 : 40|8@1+ (1,0) [0|255] "" PC
+ SG_ PartSlot m163 : 8|8@1+ (1,0) [0|255] "" PC
+ SG_ PartFlags m163 : 16|8@1+ (1,0) [0|255] "" PC
+ SG_ PartAddr m163 : 24|8@1+ (1,0) [0|255] "x 64 KB" PC
+ SG_ PartSize m163 : 32|8@1+ (1,0) [0|255] "x 64 KB" PC
+ SG_ PartUsedKb m163 : 40|16@1+ (1,0) [0|65535] "KB" PC
+ SG_ PartVerSlot m164 : 8|8@1+ (1,0) [0|255] "" PC
+ SG_ PartVerMajor m164 : 16|8@1+ (1,0) [0|255] "" PC
+ SG_ PartVerMinor m164 : 24|8@1+ (1,0) [0|255] "" PC
+ SG_ PartVerPatch m164 : 32|8@1+ (1,0) [0|255] "" PC
+ SG_ ActionCmd m165 : 8|8@1+ (1,0) [0|255] "" PC
+ SG_ ActionResult m165 : 16|8@1+ (1,0) [0|255] "" PC
+ SG_ ValParam m176 : 8|8@1+ (1,0) [0|255] "" PC
+ SG_ ValIndex m176 : 16|8@1+ (1,0) [0|255] "" PC
+ SG_ ValValue m176 : 32|32@1+ (1,0) [0|4294967295] "" PC
+ SG_ PackCmd m177 : 8|8@1+ (1,0) [0|255] "" PC
+ SG_ PackParam m177 : 16|8@1+ (1,0) [0|255] "" PC
+ SG_ PackStatus m177 : 24|8@1+ (1,0) [0|255] "" PC
 
 BO_ 1861 DATA_DASHBOARD: 8 PC
  SG_ Data0 : 0|8@1+ (1,0) [0|255] "" DASHBOARD
@@ -76,6 +111,15 @@ BO_ 1861 DATA_DASHBOARD: 8 PC
  SG_ Data5 : 40|8@1+ (1,0) [0|255] "" DASHBOARD
  SG_ Data6 : 48|8@1+ (1,0) [0|255] "" DASHBOARD
  SG_ Data7 : 56|8@1+ (1,0) [0|255] "" DASHBOARD
+
+BO_ 1349 SENSOR_DASHBOARD: 6 DASHBOARD
+ SG_ SensorValue : 0|16@1- (0.1,0) [-3276.8|3276.7] "" PC
+ SG_ SensorMv : 16|16@1+ (1,0) [0|65535] "mV" PC
+ SG_ FlagFault : 32|1@1+ (1,0) [0|1] "" PC
+ SG_ FlagLowAlarm : 33|1@1+ (1,0) [0|1] "" PC
+ SG_ FlagHighAlarm : 34|1@1+ (1,0) [0|1] "" PC
+ SG_ FlagVeryLowAlarm : 35|1@1+ (1,0) [0|1] "" PC
+ SG_ FrameCounter : 40|8@1+ (1,0) [0|255] "" PC
 
 BO_ 1584 CMD_PDM_FRONT: 8 PC
  SG_ MsgType M : 0|8@1+ (1,0) [0|255] "" PDM_FRONT
@@ -198,10 +242,23 @@ BO_ 1825 DATA_KEYPAD: 8 PC
  SG_ Data7 : 56|8@1+ (1,0) [0|255] "" KEYPAD
 
 CM_ BO_ 1536 "PC to all boards. Only SCAN (MsgType 1) is accepted in broadcast.";
-CM_ BO_ 1605 "PC to Dashboard (ESP32-S3): commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT.";
-CM_ BO_ 1733 "Dashboard (ESP32-S3) to PC: heartbeat, scan answers (INFO_A, INFO_B) and update answers.";
+CM_ BO_ 1605 "PC to Dashboard (ESP32-S3): commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT, 32 DETAILS, 33 REBOOT, 34 IDENTIFY, 35 ROLLBACK, 48 PARAM_READ, 49 PARAM_WRITE, 50 PARAM_SAVE, 51 PARAM_RESET.";
+CM_ BO_ 1733 "Dashboard (ESP32-S3) to PC: heartbeat, scan answers (INFO_A, INFO_B), update answers, details (DETAIL_A..PART_B), action answer and parameter answers.";
 CM_ SG_ 1733 HwRevision "Hardware revision as an ASCII letter (65 = A, 66 = B).";
 CM_ SG_ 1733 AckBlock "Number of the block confirmed (or refused) by the board.";
+CM_ BO_ 1349 "Dashboard (ESP32-S3) to PC: sensor value, sent by the board by itself every 100 ms (20..500 ms). No command byte. Not sent during a firmware update.";
+CM_ SG_ 1349 SensorValue "Value in the unit of the gauge (tenths on the bus). -0.1 (FF FF) = no valid value yet.";
+CM_ SG_ 1349 SensorMv "Voltage at the connector.";
+CM_ SG_ 1349 FlagFault "Sensor in fault (wire cut, short to ground, short to 5 V). All the alarms are off.";
+CM_ SG_ 1349 FrameCounter "Grows at every frame (0..255): it stops if the board stops.";
+CM_ SG_ 1733 TempC "-128 = not available.";
+CM_ SG_ 1733 PartFlags "bit0 = running now, bit1 = starts at next boot, bit2 = valid image found.";
+CM_ SG_ 1733 PartAddr "Address in units of 64 KB.";
+CM_ SG_ 1733 PartSize "Size in units of 64 KB.";
+CM_ SG_ 1733 PartVerMajor "255 = no firmware in the slot.";
+CM_ SG_ 1733 GitDirty "1 = the firmware was built with uncommitted changes.";
+CM_ SG_ 1733 ValValue "Value of the parameter, 4 bytes little endian. Numbers with decimals are multiplied by 10.";
+CM_ SG_ 1605 WriteValue "New value of the parameter, 4 bytes little endian. Numbers with decimals are multiplied by 10.";
 CM_ BO_ 1861 "File data for Dashboard (ESP32-S3): 8 raw bytes per frame, 32 frames per block of 256 bytes.";
 CM_ BO_ 1584 "PC to PDM Anteriore (STM32): commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT.";
 CM_ BO_ 1712 "PDM Anteriore (STM32) to PC: heartbeat, scan answers (INFO_A, INFO_B) and update answers.";
@@ -220,14 +277,24 @@ CM_ SG_ 1697 AckBlock "Number of the block confirmed (or refused) by the board."
 CM_ BO_ 1825 "File data for Tastierino: 8 raw bytes per frame, 32 frames per block of 256 bytes.";
 
 VAL_ 1536 MsgType 1 "SCAN" ;
-VAL_ 1605 MsgType 1 "SCAN" 16 "BEGIN" 17 "CRC" 18 "BLOCK_END" 19 "FINISH" 20 "ABORT" 21 "ENTER_BOOT" ;
-VAL_ 1733 MsgType 128 "HEARTBEAT" 129 "INFO_A" 130 "INFO_B" 144 "BEGIN_ACK" 146 "BLOCK_ACK" 147 "FINISH_ACK" 149 "BOOT_ACK" ;
+VAL_ 1605 MsgType 1 "SCAN" 16 "BEGIN" 17 "CRC" 18 "BLOCK_END" 19 "FINISH" 20 "ABORT" 21 "ENTER_BOOT" 32 "DETAILS" 33 "REBOOT" 34 "IDENTIFY" 35 "ROLLBACK" 48 "PARAM_READ" 49 "PARAM_WRITE" 50 "PARAM_SAVE" 51 "PARAM_RESET" ;
+VAL_ 1733 MsgType 128 "HEARTBEAT" 129 "INFO_A" 130 "INFO_B" 144 "BEGIN_ACK" 146 "BLOCK_ACK" 147 "FINISH_ACK" 149 "BOOT_ACK" 160 "DETAIL_A" 161 "DETAIL_B" 162 "DETAIL_C" 163 "PART_A" 164 "PART_B" 165 "ACTION_ACK" 176 "PARAM_VALUE" 177 "PARAM_ACK" ;
 VAL_ 1733 HbState 0 "APPLICATION" 1 "UPDATE_IN_PROGRESS" ;
 VAL_ 1733 ChipType 1 "ESP32-S3" 2 "STM32" ;
-VAL_ 1733 BeginStatus 0 "OK" 1 "RETRY" 2 "TOO_BIG" 3 "BUSY" 4 "FLASH_ERROR" 5 "INVALID" ;
-VAL_ 1733 AckStatus 0 "OK" 1 "RETRY" 2 "TOO_BIG" 3 "BUSY" 4 "FLASH_ERROR" 5 "INVALID" ;
-VAL_ 1733 FinishStatus 0 "OK" 1 "RETRY" 2 "TOO_BIG" 3 "BUSY" 4 "FLASH_ERROR" 5 "INVALID" ;
-VAL_ 1733 BootStatus 0 "OK" 1 "RETRY" 2 "TOO_BIG" 3 "BUSY" 4 "FLASH_ERROR" 5 "INVALID" ;
+VAL_ 1733 BeginStatus 0 "OK" 1 "RETRY" 2 "TOO_BIG" 3 "BUSY" 4 "FLASH_ERROR" 5 "INVALID" 6 "UNKNOWN" ;
+VAL_ 1733 AckStatus 0 "OK" 1 "RETRY" 2 "TOO_BIG" 3 "BUSY" 4 "FLASH_ERROR" 5 "INVALID" 6 "UNKNOWN" ;
+VAL_ 1733 FinishStatus 0 "OK" 1 "RETRY" 2 "TOO_BIG" 3 "BUSY" 4 "FLASH_ERROR" 5 "INVALID" 6 "UNKNOWN" ;
+VAL_ 1733 BootStatus 0 "OK" 1 "RETRY" 2 "TOO_BIG" 3 "BUSY" 4 "FLASH_ERROR" 5 "INVALID" 6 "UNKNOWN" ;
+VAL_ 1605 ReadParam 1 "FILTER_MS" 2 "LOW_MV" 3 "HIGH_MV" 4 "NODE_ID" 5 "NAME" 6 "UNIT" 7 "DECIMALS" 8 "FAULT_MODE" 9 "SENSOR_PERIOD" 16 "TABLE_N" 17 "TABLE_POINT" 32 "ALARM_ENABLE" 33 "ALARM_THRESHOLD" 34 "ALARM_HYST" 35 "ALARM_DELAY" 36 "ALARM_STARTUP" ;
+VAL_ 1605 WriteParam 1 "FILTER_MS" 2 "LOW_MV" 3 "HIGH_MV" 4 "NODE_ID" 5 "NAME" 6 "UNIT" 7 "DECIMALS" 8 "FAULT_MODE" 9 "SENSOR_PERIOD" 16 "TABLE_N" 17 "TABLE_POINT" 32 "ALARM_ENABLE" 33 "ALARM_THRESHOLD" 34 "ALARM_HYST" 35 "ALARM_DELAY" 36 "ALARM_STARTUP" ;
+VAL_ 1733 ValParam 1 "FILTER_MS" 2 "LOW_MV" 3 "HIGH_MV" 4 "NODE_ID" 5 "NAME" 6 "UNIT" 7 "DECIMALS" 8 "FAULT_MODE" 9 "SENSOR_PERIOD" 16 "TABLE_N" 17 "TABLE_POINT" 32 "ALARM_ENABLE" 33 "ALARM_THRESHOLD" 34 "ALARM_HYST" 35 "ALARM_DELAY" 36 "ALARM_STARTUP" ;
+VAL_ 1733 PackParam 1 "FILTER_MS" 2 "LOW_MV" 3 "HIGH_MV" 4 "NODE_ID" 5 "NAME" 6 "UNIT" 7 "DECIMALS" 8 "FAULT_MODE" 9 "SENSOR_PERIOD" 16 "TABLE_N" 17 "TABLE_POINT" 32 "ALARM_ENABLE" 33 "ALARM_THRESHOLD" 34 "ALARM_HYST" 35 "ALARM_DELAY" 36 "ALARM_STARTUP" ;
+VAL_ 1733 PackCmd 48 "PARAM_READ" 49 "PARAM_WRITE" 50 "PARAM_SAVE" 51 "PARAM_RESET" ;
+VAL_ 1733 PackStatus 0 "OK" 1 "RETRY" 2 "TOO_BIG" 3 "BUSY" 4 "FLASH_ERROR" 5 "INVALID" 6 "UNKNOWN" ;
+VAL_ 1733 ActionCmd 33 "REBOOT" 34 "IDENTIFY" 35 "ROLLBACK" ;
+VAL_ 1733 ActionResult 0 "OK" 1 "FAILED" ;
+VAL_ 1733 ResetCode 0 "UNKNOWN" 1 "POWER_ON" 2 "EXTERNAL" 3 "SOFTWARE" 4 "CRASH" 5 "WATCHDOG" 6 "BROWNOUT" 7 "OTHER" ;
+VAL_ 1349 FlagFault 0 "OK" 1 "FAULT" ;
 VAL_ 1584 MsgType 1 "SCAN" 16 "BEGIN" 17 "CRC" 18 "BLOCK_END" 19 "FINISH" 20 "ABORT" 21 "ENTER_BOOT" ;
 VAL_ 1712 MsgType 128 "HEARTBEAT" 129 "INFO_A" 130 "INFO_B" 144 "BEGIN_ACK" 146 "BLOCK_ACK" 147 "FINISH_ACK" 149 "BOOT_ACK" ;
 VAL_ 1712 HbState 0 "APPLICATION" 1 "UPDATE_IN_PROGRESS" ;

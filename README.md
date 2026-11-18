@@ -119,7 +119,7 @@ The full protocol (update sequence, details, parameters) is documented in the
 [BusWrench README](https://github.com/nicola-reat/BusWrench#how-it-works) and
 defined in [`FW/CanGauge/main/can_update_proto.h`](FW/CanGauge/main/can_update_proto.h).
 A DBC file for [SavvyCAN](https://www.savvycan.com/) is in
-[`FW/can_update.dbc`](FW/can_update.dbc).
+[`FW/can_update.dbc`](FW/Can_gauge_DB.dbc).
 
 ## Configuration with BusWrench
 
