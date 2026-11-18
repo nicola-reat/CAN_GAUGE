@@ -1,0 +1,23 @@
+# Settings of the CAN_GAUGE project that are different from the ESP-IDF defaults.
+# The file "sdkconfig" is NOT in git (it is generated and changes at every build), so
+# anyone who clones the project gets these settings from here.
+#
+# To check or update this file with the settings of your build, run in the ESP-IDF
+# terminal:    idf.py save-defconfig     (it writes only the changed settings)
+# Delete "sdkconfig" and rebuild to be sure the result is the same.
+
+CONFIG_IDF_TARGET="esp32s3"
+
+# 8 MB flash and the two OTA partitions of partitions.csv (needed by the CAN update)
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# Rollback: a new firmware that does not confirm itself is thrown away
+# (see confirm_firmware() in main.c)
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+
+# Fonts used by the SquareLine user interface
+CONFIG_LV_FONT_MONTSERRAT_18=y
+CONFIG_LV_FONT_MONTSERRAT_26=y
+CONFIG_LV_FONT_MONTSERRAT_42=y
