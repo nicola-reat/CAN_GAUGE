@@ -1,150 +1,246 @@
-# CAN_GAUGE
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Docs/images/can-gauge-logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="Docs/images/can-gauge-logo-light.png">
+    <img src="Docs/images/can-gauge-logo-dark.png" alt="CAN_GAUGE" width="560">
+  </picture>
+</p>
 
-# 🏁 CAN Fuel Level Gauge
+<p align="center">
+  <b>A round display that reads a 0-5 V sensor, shows it, and sends it on the CAN bus.<br>
+  Configured and updated over CAN, no cable, no recompiling.</b>
+</p>
 
-**A tiny, track-car-ready fuel level display you mount to the inside of your window.**
+<p align="center">
+  <img alt="MCU" src="https://img.shields.io/badge/MCU-ESP32--S3-1E7BFF">
+  <img alt="ESP-IDF" src="https://img.shields.io/badge/ESP--IDF-5.5-2BB6E8">
+  <img alt="LVGL" src="https://img.shields.io/badge/LVGL-9.3-1E7BFF">
+  <img alt="CAN" src="https://img.shields.io/badge/CAN-500%20kbit%2Fs-2BB6E8">
+  <img alt="Status" src="https://img.shields.io/badge/status-in%20development-F5A524">
+</p>
 
-Built around an ESP32-S3 and a 1.85" round LCD, this board reads a fuel level sensor (0–5 V analog, NTC, or a sensor already on the CAN bus) and shows it instantly — no more guessing, no more shaking the car to hear how much is left in the tank.
+CAN_GAUGE is a small custom board (ESP32-S3 + 1.85" round display) built for
+the BMW E36 race car of its author. The fuel tank is in the boot, behind a
+foam baffle, so it is hard to know how much fuel is left: the board is fixed
+**on the inside of a window** and read from outside, next to the filler.
 
-> Designed and built from scratch by **NR Developments** for a BMW E36 race car.
+It measures a classic 0-5 V sensor (a fuel float, but any 0-5 V sensor works),
+turns the voltage into a real value with a calibration table, checks the
+sensor, raises alarms, and puts the value on the CAN bus for the other
+boards of the car. All the settings can be changed from a PC with
+[BusWrench](https://github.com/nicola-reat/BusWrench), and the firmware itself
+is updated **over CAN**.
 
----
+> Several gauges can live on the same bus (fuel, oil pressure, ...): every
+> board has its own node ID.
 
-## 🎯 Why this exists
+## Features
 
-On a lot of race cars — this BMW E36 included — the fuel tank isn't where you'd expect it. Here it lives in the boot, fitted with a foam baffle to stop fuel surge under cornering and braking. That foam is great for safety, but it makes it almost impossible to tell how much fuel is actually in there just by looking, and constantly getting in and out of the car to check is a pain — especially between sessions or during a pit stop.
+- **Analog input 0-5 V**: 64 samples averaged for each reading, then a moving
+  average (50 ms to 10 s, default 1 s) so the needle does not jump.
+- **Calibration table**: 2 to 16 points (voltage → value), with linear
+  interpolation. It also works the other way round (full tank = low voltage).
+- **Sensor supervision**: wire cut, short to ground and short to 5 V are
+  detected and reported (limits are adjustable). A fault is started and ended
+  only after half a second of stable readings, so a spike does not trigger it.
+- **Alarms**: low, very low and high, each with enable, threshold, hysteresis
+  and delay, plus an "ignore for the first seconds after power on" time. During
+  a sensor fault all alarms are off.
+- **Round display** 1.85" (360 × 360, ST77916) with a UI designed in SquareLine
+  Studio and drawn by LVGL.
+- **CAN bus** at 500 kbit/s: the value is sent every 100 ms by default
+  (20 to 500 ms), together with the voltage, the alarm flags and a frame counter.
+- **Configuration over CAN**: filter, fault limits, calibration table, name,
+  unit, decimals, behaviour on fault, alarms, frame period and node ID. Values
+  work at once and can be saved in the permanent memory (NVS) or reset to the
+  factory values.
+- **Firmware update over CAN** with 256-byte blocks, an acknowledgement for each
+  block, retries and a CRC32 check of the whole image. Two OTA partitions: the
+  running firmware is never touched, and if the new one does not start the
+  board **rolls back by itself**.
+- **Diagnostics**: uptime, reset reason, CAN error counters, flash partitions
+  and git commit of the running firmware, readable from the PC.
+- **Remote actions**: reboot, identify (the display blinks to find the right
+  board among several) and manual rollback.
 
-The plan: run a line from the tank up to the rear window, mount this board **on the inside** of the glass, and read the fuel level straight off the display **from outside the car**. Walk up, glance at the window, know exactly how much fuel you have. No opening the boot, no removing panels, no more spongy uncertainty.
+## Hardware
 
----
-
-## ✨ Features
-
-- **ESP32-S3** brain — Wi-Fi + BLE
-- **1.85" round display** — clean, glanceable, and it disappears nicely behind tinted glass
-- **Flexible sensor input** — works with:
-  - a **0–5 V analog sensor** (e.g. a resistive fuel level sender), scaled and conditioned on-board for the ESP32's 3.3 V ADC
-  - an **NTC thermistor** or similar, by swapping a couple of resistors around the input op-amp
-  - a **CAN-connected sensor**, where this board just listens on the bus and displays whatever value comes in
-- **CAN bus (500 kb)** — send your local sensor reading out to the rest of the car, or receive a reading from elsewhere and display it. Switchable 120 Ω termination resistor on board.
-- **Automotive-grade power input** — takes 12 V straight from the car, with reverse-polarity protection, a TVS clamp, and a buck + LDO stage (5 V then 3.3 V) so it's happy living on a noisy vehicle electrical system
-- **Ignition-aware** — a dedicated ignition (switched 12 V) input so the board can wake up or go quiet with the rest of the car's electronics
-- **USB-C** — for programming, debugging, and power on the bench, with auto-reset/auto-bootloader circuitry so flashing is a one-click affair (no button-mashing)
-- **OTA-friendly** — reflash over Wi-Fi once it's mounted and wired in, no need to pull it back out
-- **Single automotive connector** — power, ignition, CAN H/L, sensor supply and sensor signal all come in on one Molex connector for a tidy, serviceable install
-
----
-
-## 🧠 How it works
-
-```
-                 ┌──────────────────────────┐
-  12V + IGN ───▶ │   Power (buck + LDO)      │ ──▶ 5V / 3.3V rails
-                 └──────────────────────────┘
-                              │
- Sensor (0-5V/NTC) ─▶ [ signal conditioning ] ─▶ ┌───────────────┐
-                                                   │   ESP32-S3     │ ──▶ 1.85" round display
- CAN H/L ─────────▶ [ CAN transceiver, 500kb ] ─▶ │                │
-                                                   └───────────────┘
-                                                        │      │
-                                                     USB-C    Wi-Fi
-                                                   (program)  (OTA / future features)
-```
-
-The board can work two ways, depending on how you wire your sensor:
-
-1. **Local sensor mode** — plug a sensor directly into the board's sensor input, read it locally, show it on the display, and optionally broadcast the value on the CAN bus for other devices (loggers, dashboards, etc.) to use.
-2. **CAN listener mode** — leave the sensor input unused and instead have the sensor connected elsewhere on the car's CAN bus. This board just subscribes to the relevant message and displays it.
-
----
-
-## 🔌 Hardware overview
-
-| Block | Details |
+| | |
 |---|---|
-| **MCU** | ESP32-S3-WROOM-1-N |
-| **Display** | 1.85" round LCD, SPI interface (SCLK / MOSI / MISO / DC / RST / CS + backlight control) |
-| **Power in** | 12 V automotive, reverse-polarity diode + TVS protection |
-| **Regulation** | 12 V → 5 V buck converter (0.6 A max) → 3.3 V LDO (0.5 A max) |
-| **CAN** | High-speed CAN transceiver, 500 kb/s, ESD-protected, switchable 120 Ω termination |
-| **Sensor input** | Op-amp based conditioning stage; scales a 0–5 V signal down to the 3.3 V domain |
-| **USB** | USB-C, used for programming/debug; includes auto-reset circuitry and USB ESD protection |
-| **External I/O** | Single Molex connector: +12 V, GND, Ignition, CAN H, CAN L, Sensor 5 V, Sensor signal |
-| **Test points** | UART TX/RX/DTR/RTS/GND broken out for easy debugging |
-| **Status LEDs** | Power and status indicators on board |
+| MCU | ESP32-S3-WROOM-1-N, 8 MB flash, 8 MB PSRAM |
+| Display | 1.85" round LCD, 360 × 360, ST77916 (connector compatible with the Waveshare ESP32-S3-AUDIO-Board display, touch not used) |
+| Sensor input | 0-5 V on an ADC channel, through a voltage divider (GPIO4) |
+| CAN | on-board transceiver, 500 kbit/s, switchable termination (TX GPIO48, RX GPIO47) |
+| Power | 12 V from the car, with protection, 12 V → 5 V buck converter (LV3842) |
+| Programming | USB-C (with auto-reset) for the first flash; then CAN |
+| Connector | 8-way Molex: sensor signal, 5 V for the sensor, GND, ignition, CAN L, CAN H, +12 V |
 
-### 🧪 Sensor options
+In this revision the input is a classic 0-5 V sensor (no NTC) and the ignition
+input is not used by the firmware yet.
 
-The board ships configured for a **0–5 V analog sensor** by default (e.g. a typical resistive fuel level sender), which gets scaled down to a safe 3.3 V range for the ESP32's ADC.
+The schematic and the PCB are in [`PCB/`](PCB), the enclosure in
+[`3D/Case`](3D/Case).
 
-Want to use an **NTC thermistor** (or a similar resistive sensor) instead? Just remove the two resistors around the input op-amp stage that set up the 0–5 V scaling — the input then behaves as a simple resistive divider suitable for an NTC. See the schematic (`Sensor.SchDoc`) for exactly which components to pull.
+## Part of a bigger system
 
-### 🔗 Connector pinout
+CAN_GAUGE is one of the boards of the car and it is managed by BusWrench:
 
-The board connects to the car through a single 8-way Molex connector:
+| Project | What it is |
+|---------|-----------|
+| **CAN_GAUGE** (this repository) | Gauge with a round display and one analog input |
+| [**BusWrench**](https://github.com/nicola-reat/BusWrench) | Windows app: bus scan, firmware update over CAN, configuration of the boards |
+| [**CAN_PDM**](https://github.com/nicola-reat/can_pdm) | Power distribution module (STM32F446) |
 
-| Pin | Signal | Notes |
-|---|---|---|
-| 1 | Sensor signal | Local analog sensor input |
-| 2 | Sensor 5 V | Supply for an external sensor |
-| 3 | GND | |
-| 4 | Ignition | Switched 12 V (key-on) |
-| 5 | CAN L | |
-| 6 | CAN H | |
-| 7 | +12 V | Permanent battery feed |
+## How it talks on the bus
 
----
+Standard 11-bit frames, little endian. The board has a node ID (default `0x45`,
+changeable from BusWrench, 1 to `0x7F`) and the IDs are derived from it:
 
-## 🖥️ Programming
+| ID | Direction | Content |
+|----|-----------|---------|
+| `0x500 + node` | board → all | **Sensor value**, sent by itself every 100 ms |
+| `0x600` | PC → all | Broadcast, only `SCAN` is accepted |
+| `0x600 + node` | PC → board | Commands |
+| `0x680 + node` | board → PC | Replies and heartbeat (every second) |
+| `0x700 + node` | PC → board | File data during an update |
 
-Two ways to flash and update firmware:
+**Sensor frame (`0x500 + node`, 6 bytes)**
 
-- **USB-C** — plug in, hit upload. Auto-reset circuitry handles entering bootloader mode automatically, so you don't need to hold any buttons.
-- **Wi-Fi (OTA)** — once the board is mounted and wired into the car, push firmware updates over the air without pulling it back out.
+| Byte | Content |
+|------|---------|
+| 0-1 | value × 10 (i16). `FF FF` = no valid value yet |
+| 2-3 | voltage at the connector, mV (u16) |
+| 4 | flags: bit 0 sensor fault, bit 1 low alarm, bit 2 high alarm, bit 3 very low alarm |
+| 5 | frame counter (0..255), it stops if the board stops |
 
-Firmware source, build instructions, and flashing tools live in [`/firmware`](./firmware) *(coming soon)*.
+Example: `0x545  C8 00  D0 07  00  2A` = 20.0, 2000 mV, no alarms, frame 42.
 
----
+The full protocol (update sequence, details, parameters) is documented in the
+[BusWrench README](https://github.com/nicola-reat/BusWrench#how-it-works) and
+defined in [`FW/CanGauge/main/can_update_proto.h`](FW/CanGauge/main/can_update_proto.h).
+A DBC file for [SavvyCAN](https://www.savvycan.com/) is in
+[`FW/can_update.dbc`](FW/can_update.dbc).
 
-## 🛠️ Repository structure
+## Configuration with BusWrench
+
+Connect a PEAK PCAN-USB to the bus, open BusWrench, scan, select the gauge and
+open **Configurazione**:
+
+- **Sensore**: calibration table with a curve graph (drag the points, or
+  "capture" the live voltage), filter time and fault limits, live value.
+- **Display**: name, unit, decimals, and what to show on a fault (`- - -` or the
+  last valid value).
+- **Allarmi**: three alarms with threshold, hysteresis and delay, and the live
+  state read from the board.
+- **CAN**: node ID, period of the sensor frame, and a live view of the frame
+  byte by byte.
+
+**Invia alla scheda** applies the values at once, **Salva sulla scheda** keeps them
+after a power off, **Fabbrica** restores the factory values.
+
+| Parameter | Default |
+|-----------|---------|
+| Name / unit | `FUEL` / `L` |
+| Decimals | 1 |
+| Filter | 1000 ms |
+| Fault limits | below 250 mV or above 4600 mV |
+| Sensor frame period | 100 ms |
+| Low alarm | 12.0, on |
+| Very low alarm | 6.0, on |
+| High alarm | 60.0, off |
+| Hysteresis / delay | 1.0 / 2.0 s |
+| Ignore alarms after power on | 5 s |
+| Node ID | `0x45` |
+
+The calibration table of a new board holds **example values**: measure your own
+tank (known liters → voltage) and write the real points.
+
+## Firmware
+
+**Requirements**
+- [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/get-started/) 5.5
+- The board connected by USB-C
+
+**Build and first flash**
+
+```bash
+cd FW/CanGauge
+idf.py set-target esp32s3
+idf.py build
+idf.py -p COMx flash monitor
+```
+
+`sdkconfig.defaults` already holds the settings of the project (8 MB flash,
+the two OTA partitions of `partitions.csv`, application rollback, LVGL fonts).
+The file `sdkconfig` is generated and is not in git.
+
+**Next updates: over CAN**
+
+1. `idf.py build` produces `build/CanGauge.bin`.
+2. In BusWrench: **Scansiona**, select the board, **Aggiorna Firmware**, choose
+   the `.bin` and **Avvia Aggiornamento**.
+3. The board restarts on the new firmware. If the new firmware does not
+   confirm itself, the bootloader goes back to the previous one.
+
+The version is set by `PROJECT_VER` in `FW/CanGauge/CMakeLists.txt`.
+
+**Flash layout (8 MB)**
+
+| Partition | Address | Size |
+|-----------|---------|------|
+| nvs | `0x9000` | 24 KB |
+| otadata | `0xF000` | 8 KB |
+| phy_init | `0x11000` | 4 KB |
+| ota_0 | `0x20000` | 3.5 MB |
+| ota_1 | `0x3A0000` | 3.5 MB |
+
+## Project structure
 
 ```
-.
-├── hardware/          # Schematics, PCB layout, BOM, Gerbers
-│   ├── CAN_PDM_SCH_PCB.PDF
-│   └── ...
-├── firmware/           # ESP32-S3 firmware (coming soon)
-└── README.md
+PCB/                       Schematic and PCB
+3D/Case/                   Enclosure
+Docs/                      Documents and images
+FW/
+├── can_update.dbc         DBC file for SavvyCAN
+└── CanGauge/              ESP-IDF project
+    ├── main/
+    │   ├── main.c             start-up, firmware confirmation
+    │   ├── can_node.c         CAN protocol: scan, update, parameters, sensor frame
+    │   ├── can_update_proto.h CAN IDs and codes (shared with BusWrench)
+    │   ├── adc_sensor.c       ADC, filter, fault detection, calibration table
+    │   ├── gauge_cfg.c        name, unit, decimals, fault mode, frame period
+    │   └── gauge_alarm.c      alarms
+    ├── components/
+    │   ├── lcd_st77916/       display driver
+    │   └── ui/                SquareLine Studio user interface (generated)
+    ├── partitions.csv
+    └── sdkconfig.defaults
 ```
 
----
+The files of `components/ui` are generated by SquareLine Studio and are
+overwritten at every export: custom display code lives in `main/`.
 
-## 📋 Status
+## Roadmap
 
-This is a first-revision board, built and tested on a real race car. Expect iteration as real-world track use turns up things to improve — issues and pull requests are welcome.
+- [x] Power supply, CAN interface, analog front-end, ESP32-S3 and display
+- [x] 0-5 V sensor: filter, calibration table, fault detection
+- [x] Sensor frame on the CAN bus
+- [x] Configuration of everything over CAN (BusWrench)
+- [x] Alarms with threshold, hysteresis, delay and start-up time
+- [x] Firmware update over CAN with automatic rollback
+- [x] Diagnostics, reboot, identify, rollback
+- [ ] Live value, name, unit and alarms on the display (the UI is still static)
+- [ ] Sensor frame and parameters in the DBC file
+- [ ] Gallery: photos, screenshots and renders
+- [ ] Enclosure
+- [ ] Ignition input
+- [ ] Optional: value taken from another gauge over CAN
 
-- [x] Power design (12 V in, reverse-polarity + TVS protected, 5 V / 3.3 V rails)
-- [x] CAN bus interface with switchable termination
-- [x] Analog sensor front-end (0–5 V, NTC-adaptable)
-- [x] ESP32-S3 core with USB-C programming + auto-reset
-- [x] Round 1.85" display support
-- [ ] Firmware / display UI
-- [ ] Wi-Fi OTA workflow
-- [ ] Enclosure / window-mount hardware
+## Contributing
 
----
+Issues and pull requests are welcome, especially for the protocol, the display
+UI and the enclosure.
 
-## 📷 Gallery
+## License
 
-coming soon
-
----
-
-## 🤝 Contributing
-
-Found a bug, have an improvement, or built your own version for a different car? Issues and pull requests are welcome.
-
-
-## 📬 Contact
-
-Built by **NR Developments**. Questions, ideas, or just want to talk race-car electronics? Open an issue or reach out.
+See [`LICENSE`](LICENSE).
