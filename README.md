@@ -20,9 +20,9 @@
 </p>
 
 CAN_GAUGE is a small custom board (ESP32-S3 + 1.85" round display) built for
-the BMW E36 race car of its author. The fuel tank is in the boot, behind a
-foam baffle, so it is hard to know how much fuel is left: the board is fixed
-**on the inside of a window** and read from outside, next to the filler.
+my BMW E36 race car. The fuel tank is in the boot, behind a foam baffle, so it
+is hard to know how much fuel is left: the board is fixed **on the inside of a
+window** and read from outside.
 
 It measures a classic 0-5 V sensor (a fuel float, but any 0-5 V sensor works),
 turns the voltage into a real value with a calibration table, checks the
