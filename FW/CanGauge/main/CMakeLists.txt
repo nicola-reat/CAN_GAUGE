@@ -1,4 +1,4 @@
-idf_component_register(SRCS "gauge_alarm.c" "gauge_cfg.c" "adc_sensor.c" "main.c" "can_node.c"
+idf_component_register(SRCS "gauge_alarm.c" "gauge_cfg.c" "gauge_display" "adc_sensor.c" "main.c" "can_node.c"
                        INCLUDE_DIRS "."
                        REQUIRES lcd_st77916 ui driver esp_timer esp_hw_support driver esp_timer esp_hw_support app_update esp_rom esp_system spi_flash esp_adc nvs_flash)
 

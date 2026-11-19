@@ -1,146 +1,186 @@
 /*
- * main.c - entry point of the can_gauge firmware (ESP32-S3).
+ * main.c - entry point of the can_gauge firmware (ESP32-S3)
+ * ==========================================================
  *
- * What this file does:
- *   1. starts the round display (ST77916) and the LVGL graphics library;
- *   2. shows the user interface designed with SquareLine / LVGL (ui_init);
- *   3. starts the CAN node, which answers to the PC (scan, firmware update,
- *      details, reboot, identify, rollback, parameters) and sends the sensor
- *      value - see can_node.c;
- *   4. starts the reading of the analog sensor - see adc_sensor.c;
- *   5. confirms the new firmware after a few seconds (rollback protection);
- *   6. defines board_identify(), used by the "Identify board" button of BusWrench.
+ * What this file does
+ *   app_main() brings the board up in this order:
+ *     - analog sensor and CAN node, so the first frame on the display and on
+ *       the bus already carries the saved settings and a real reading;
+ *     - round display (ST77916) and LVGL, with the backlight still off;
+ *     - user interface: static layout from SquareLine (ui_init) and live
+ *       content (gauge_display_start), first frame drawn at once;
+ *     - backlight fade-in, so the panel memory is never visible at power on,
+ *       then the power-on sweep of the ring (gauge_display_sweep);
+ *     - confirmation of a new firmware after a few seconds (app rollback).
+ *
+ *   board_identify() is also defined here: it is called by can_node.c when
+ *   the "Identify board" button of BusWrench is pressed.
+ *
+ * Modules
+ *   can_node.c       CAN protocol with BusWrench (scan, update, details,
+ *                    actions, parameters) and periodic sensor frame
+ *   adc_sensor.c     reading, filtering and calibration of the 0-5 V input
+ *   gauge_cfg.c      name, unit, decimals and fault mode of the display
+ *   gauge_alarm.c    low, very low and high alarms
+ *   gauge_display.c  ring of segments, values and colors on the screen
  */
 
-#include "freertos/FreeRTOS.h"      // FreeRTOS: the operating system of the ESP32
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"          // vTaskDelay()
-#include "esp_lvgl_port.h"          // glue between ESP-IDF and LVGL (lock, display)
-#include "lvgl.h"                   // LVGL: the graphics library
-#include "ST77916.h"                // driver of the display (LCD_Init, panel handles)
-#include "ui.h"                     // the user interface (ui_init)
-#include "can_node.h"               // CAN node (can_node_start)
-#include "esp_ota_ops.h"            // esp_ota_mark_app_valid_cancel_rollback()
-#include "esp_log.h"                // ESP_LOGI
-#include "adc_sensor.h"             // analog sensor (adc_sensor_start)
+#include "esp_log.h"
+#include "esp_ota_ops.h"            // OTA partition state, rollback confirmation
+#include "esp_lvgl_port.h"          // LVGL task, lock and display glue for ESP-IDF
+#include "lvgl.h"
+#include "ST77916.h"                // display driver: LCD_Init(), panel handles, backlight
+#include "ui.h"                     // SquareLine export: ui_init()
+#include "can_node.h"               // can_node_start()
+#include "adc_sensor.h"             // adc_sensor_start()
+#include "gauge_cfg.h"              // gauge_cfg_get_name(), shown by board_identify()
+#include "gauge_display.h"          // gauge_display_start(), gauge_display_sweep()
 
-// ---- IDENTIFY command: blinks the screen so the board can be recognized ----
-// A white layer with a text is shown on top of the normal graphics and hidden
-// again, 8 times in 4 seconds. It is called by can_node.c (it replaces the
-// empty "weak" version defined there). The timing (every 250 ms) is decided
-// in can_node.c: this function only has to show or hide the layer.
+static const char *TAG = "main";
 
-// The white layer. It is NULL until the first call, then it is reused:
-// it is created once and only shown / hidden, never deleted.
-static lv_obj_t *s_ident_layer = NULL;
+#define CONFIRM_DELAY_MS   5000     // run time before a new firmware is confirmed
+#define FIRST_FRAME_MS     100      // time left to the LVGL task for the first frame
+#define FADE_STEP          4        // backlight step of the fade-in, percent
+#define FADE_STEP_MS       10       // time per step (one FreeRTOS tick at 100 Hz)
 
-// ---- Confirmation of a new firmware (app rollback) ----
-// After an update the new firmware starts "on trial". If the board resets
-// before this function is called, the bootloader throws the new firmware away
-// and starts the previous one. So a firmware that crashes at startup can never
-// leave the board stuck.
+/* ---------- Firmware confirmation (app rollback) ---------- */
+
+// After an OTA update the new firmware starts in the "pending verify" state.
+// If the board resets before it is confirmed, the bootloader goes back to the
+// previous firmware: a firmware that crashes at start-up cannot brick the board.
+// Nothing is done after a USB flash or when the firmware is already confirmed.
 static void confirm_firmware(void)
 {
     const esp_partition_t *run = esp_ota_get_running_partition();
     esp_ota_img_states_t state;
 
-    // Only a firmware that is "on trial" must be confirmed. After a flash via
-    // USB, or if it was already confirmed, there is nothing to do.
     if (esp_ota_get_state_partition(run, &state) == ESP_OK &&
         state == ESP_OTA_IMG_PENDING_VERIFY) {
         esp_ota_mark_app_valid_cancel_rollback();
-        ESP_LOGI("main", "New firmware confirmed");
+        ESP_LOGI(TAG, "New firmware confirmed");
     }
 }
 
-// on = true  -> show the white layer
-// on = false -> hide it (the normal graphics are visible again)
+/* ---------- Identify (BusWrench "Identify board") ---------- */
+
+// White layer shown on top of every screen while the board identifies
+// itself. Created at the first call, then only shown and hidden.
+static lv_obj_t *s_ident_layer = NULL;
+static lv_obj_t *s_ident_name  = NULL;
+
+// Set by app_main() once LVGL and the user interface exist. The CAN node is
+// started before the display, so an identify request may arrive earlier.
+static volatile bool s_ui_ready = false;
+
+// Shows (on = true) or hides (on = false) the identify layer.
+// The blink timing (8 times in 4 s) is handled by can_node.c, which calls
+// this function from its own task: the LVGL lock is therefore required.
+// It replaces the empty weak version defined in can_node.c.
 void board_identify(bool on)
 {
-    // LVGL is not thread safe: only one task at a time can use it.
-    // This function runs in the timer task, while LVGL has its own task,
-    // so we must take the lock before touching any LVGL object.
-    lvgl_port_lock(0);                     // 0 = wait as long as needed
+    if (!s_ui_ready)
+        return;                                             // display not started yet
 
-    // First call: build the layer.
+    lvgl_port_lock(0);                                      // 0 = wait as long as needed
+
     if (!s_ident_layer) {
-        // lv_layer_top() is a special layer that is always drawn above every
-        // screen: the layer covers the normal graphics without changing them.
+        // lv_layer_top() is drawn above every screen: the layer covers the
+        // gauge without changing it.
         s_ident_layer = lv_obj_create(lv_layer_top());
-        lv_obj_remove_style_all(s_ident_layer);                 // no border, no shadow
-
-        // Cover the whole display (100 % of width and height).
+        lv_obj_remove_style_all(s_ident_layer);
         lv_obj_set_size(s_ident_layer, LV_PCT(100), LV_PCT(100));
-
-        // White background, fully opaque (otherwise the graphics show through).
         lv_obj_set_style_bg_color(s_ident_layer, lv_color_white(), 0);
         lv_obj_set_style_bg_opa(s_ident_layer, LV_OPA_COVER, 0);
-
-        // Not scrollable: a touch on the display must not move it.
         lv_obj_remove_flag(s_ident_layer, LV_OBJ_FLAG_SCROLLABLE);
 
-        // Black text in the middle of the screen.
-        lv_obj_t *label = lv_label_create(s_ident_layer);
-        lv_label_set_text(label, "THIS IS");
-        lv_obj_set_style_text_color(label, lv_color_black(), 0);
-        lv_obj_center(label);
+        lv_obj_t *title = lv_label_create(s_ident_layer);
+        lv_label_set_text(title, "IDENTIFY");
+        lv_obj_set_style_text_color(title, lv_color_black(), 0);
+        lv_obj_align(title, LV_ALIGN_CENTER, 0, -24);
+
+        // Name of the gauge, so the board can be told apart from the others.
+        s_ident_name = lv_label_create(s_ident_layer);
+        lv_obj_set_style_text_color(s_ident_name, lv_color_black(), 0);
+        lv_obj_set_style_text_font(s_ident_name, &lv_font_montserrat_26, 0);
+        lv_obj_align(s_ident_name, LV_ALIGN_CENTER, 0, 12);
     }
 
-    // Show or hide the layer. HIDDEN is a flag of the object: with the flag
-    // set the object is not drawn and does not react to the touch.
-    if (on)
-        lv_obj_remove_flag(s_ident_layer, LV_OBJ_FLAG_HIDDEN);  // show
-    else
-        lv_obj_add_flag(s_ident_layer, LV_OBJ_FLAG_HIDDEN);     // hide
+    if (on) {
+        char name[GAUGE_NAME_MAX + 1];
+        gauge_cfg_get_name(name, sizeof name);              // the name may have changed
+        lv_label_set_text(s_ident_name, name);
+        lv_obj_remove_flag(s_ident_layer, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(s_ident_layer, LV_OBJ_FLAG_HIDDEN);
+    }
 
-    lvgl_port_unlock();                    // release LVGL for the other tasks
+    lvgl_port_unlock();
 }
 
-// Entry point: ESP-IDF calls app_main() once, after the system has started.
+/* ---------- Entry point ---------- */
+
 void app_main(void)
 {
+    // Sensor and CAN first: both load their settings from the NVS, so the
+    // display starts with the saved name and, shortly after, a real reading.
+    adc_sensor_start();
+    can_node_start();               // loads name, unit, alarms; starts the CAN task
 
-    // Start the display hardware: SPI/QSPI bus, reset, panel configuration.
+    // Display hardware: QSPI bus, reset, panel configuration. The backlight
+    // stays off until the first frame has been drawn.
     LCD_Init();
 
-    //Start LVGL with the default configuration. This also creates the
-    //task that draws the screen and handles the timers of the graphics.
+    // LVGL with the default configuration: this also creates the LVGL task,
+    // which draws the screen and runs the LVGL timers and animations.
     const lvgl_port_cfg_t lvgl_cfg = ESP_LVGL_PORT_INIT_CONFIG();
-    ESP_ERROR_CHECK(lvgl_port_init(&lvgl_cfg));     // stop with an error if it fails
+    ESP_ERROR_CHECK(lvgl_port_init(&lvgl_cfg));
 
-    //Tell LVGL how the display is made (size, color format, buffers).
     const lvgl_port_display_cfg_t disp_cfg = {
-        .io_handle = lcd_get_panel_io_handle(),     // connection to the display
-        .panel_handle = lcd_get_panel_handle(),     // the display driver itself
-        .buffer_size = EXAMPLE_LCD_WIDTH * 40,      // draw buffer: 40 lines at a time
-        .double_buffer = true,                      // two buffers: draw while sending
-        .hres = EXAMPLE_LCD_WIDTH,                  // horizontal resolution (pixels)
-        .vres = EXAMPLE_LCD_HEIGHT,                 // vertical resolution (pixels)
-        .monochrome = false,                        // color display
-        .color_format = LV_COLOR_FORMAT_RGB565,     // 16 bits per pixel
-        .rotation = { .swap_xy = false, .mirror_x = false, .mirror_y = false },  // no rotation
-        .flags = { .buff_dma = true,                // buffers in DMA memory (faster)
-                   .swap_bytes = true },            // byte order expected by this panel
+        .io_handle     = lcd_get_panel_io_handle(),
+        .panel_handle  = lcd_get_panel_handle(),
+        .buffer_size   = EXAMPLE_LCD_WIDTH * 40,            // draw buffer: 40 lines
+        .double_buffer = true,                              // draw one buffer while the other is sent
+        .hres          = EXAMPLE_LCD_WIDTH,
+        .vres          = EXAMPLE_LCD_HEIGHT,
+        .monochrome    = false,
+        .color_format  = LV_COLOR_FORMAT_RGB565,
+        .rotation      = { .swap_xy = false, .mirror_x = false, .mirror_y = false },
+        .flags         = { .buff_dma   = true,              // buffers in DMA capable memory
+                           .swap_bytes = true },            // byte order of this panel
     };
-    lv_display_t *disp = lvgl_port_add_disp(&disp_cfg);
-    (void)disp;                                     // not used later: avoids a warning
+    if (lvgl_port_add_disp(&disp_cfg) == NULL)
+        ESP_LOGE(TAG, "Display not added to LVGL");
 
-    //Create the user interface. It is done with the lock taken,
-    //because from now on LVGL's own task is running too.
+    // User interface. The lock is needed because the LVGL task is already
+    // running: it draws the first frame as soon as the lock is released.
     lvgl_port_lock(0);
     ui_init();
+    gauge_display_start();
+    lvgl_port_unlock();
+    s_ui_ready = true;
+
+    // Give the LVGL task time to draw the first frame and send it to the
+    // panel, then switch the backlight on with a short fade-in.
+    vTaskDelay(pdMS_TO_TICKS(FIRST_FRAME_MS));
+    for (int b = 0; b < LCD_Backlight; b += FADE_STEP) {
+        Set_Backlight(b);
+        vTaskDelay(pdMS_TO_TICKS(FADE_STEP_MS));
+    }
+    Set_Backlight(LCD_Backlight);
+    ESP_LOGI(TAG, "Backlight on (%u %%)", LCD_Backlight);
+
+    // Power-on sweep of the ring, now that the screen is visible.
+    lvgl_port_lock(0);
+    gauge_display_sweep();
     lvgl_port_unlock();
 
-    //Start the CAN node (it creates its own task: from here on it answers
-    //to the commands of BusWrench).
-    can_node_start();          // starts CAN
-    adc_sensor_start();        // starts the reading of the analog sensor
-    // The display and the CAN node are running: wait a few seconds to be sure
-    // that everything is stable, then confirm the firmware.
-    vTaskDelay(pdMS_TO_TICKS(5000));
+    // Everything is running: confirm a new firmware once it has been stable
+    // for a few seconds.
+    vTaskDelay(pdMS_TO_TICKS(CONFIRM_DELAY_MS));
     confirm_firmware();
 
-
-    while (1) {
-        vTaskDelay(pdMS_TO_TICKS(1000));            // sleep 1 second, then again
-    }
+    // app_main() may return: ESP-IDF deletes the main task and frees its
+    // stack, while the CAN, sensor and LVGL tasks keep running.
 }

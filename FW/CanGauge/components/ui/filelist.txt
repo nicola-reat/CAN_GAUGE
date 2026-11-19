@@ -1,5 +1,5 @@
-screens/ui_Screen1.c
+screens/ui_ScreenGauge.c
 ui.c
 components/ui_comp_hook.c
 ui_helpers.c
-images/ui_img_783570693.c
+images/ui_img_fuel_icon_white_64x64_png.c
