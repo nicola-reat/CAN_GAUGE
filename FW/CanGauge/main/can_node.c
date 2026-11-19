@@ -1,25 +1,30 @@
 /*
- * can_node.c - CAN node of the Dashboard board (ESP32-S3)
+ * can_node.c - CAN node of the CAN_GAUGE board (ESP32-S3)
  * ========================================================
  *
  * This file lets the board talk with the BusWrench PC application through
- * a PCAN-USB adapter (500 kbit/s, standard 11-bit IDs).
+ * a PCAN-USB adapter (standard 11-bit IDs). The bus speed is fixed in the
+ * firmware: CAN_BITRATE_KBPS, 500 kbit/s.
  *
  * What the node does
- *   1. SCAN       answers with the board identity (chip, hardware revision,
- *                 firmware version, unique ID).
- *   2. HEARTBEAT  sends a frame every second, so the PC knows the board is alive.
- *   3. UPDATE     receives a new firmware over CAN, writes it to the spare OTA
- *                 partition (ota_0 <-> ota_1), checks it and restarts into it.
- *   4. DETAILS    sends uptime, reset reason, CAN errors, chip temperature,
- *                 build date, git commit and the state of both OTA partitions.
- *   5. ACTIONS    reboot, identify (blink the display), rollback to the
- *                 firmware stored in the other partition.
- *   6. SENSOR     sends the value of the sensor every 100 ms (not while an
- *                 update is running): value, voltage at the connector, fault flag.
- *   7. PARAMETERS the PC reads and writes the settings of the board: sensor
- *                 filter, fault limits, calibration table, node ID, and the
- *                 texts of the display (name, unit, decimals, fault mode).
+ *   SCAN        answers with the board identity (chip, hardware revision,
+ *               firmware version, unique ID).
+ *   HEARTBEAT   sends a frame every second, so the PC knows the board is alive.
+ *   UPDATE      receives a new firmware over CAN, writes it to the spare OTA
+ *               partition (ota_0 <-> ota_1), checks it and restarts into it.
+ *   DETAILS     sends uptime, reset reason, CAN errors, chip temperature,
+ *               build date, git commit and the state of both OTA partitions.
+ *   ACTIONS     reboot, identify (blink the display), rollback to the
+ *               firmware stored in the other partition.
+ *   SENSOR      sends the value of the sensor every 100 ms by default (not
+ *               while an update is running): value, voltage at the connector,
+ *               fault and alarm flags.
+ *   PARAMETERS  the PC reads and writes the settings of the board: sensor
+ *               filter, fault limits, calibration table, node ID, texts of
+ *               the display (name, unit, decimals, fault mode), alarms and
+ *               period of the sensor frame.
+ *   BUS CHECK   can_node_bus_ok() tells main.c whether the bus works, so a new
+ *               firmware is confirmed only when it can be updated again.
  *
  * Parameters (PARAM_READ / PARAM_WRITE / PARAM_SAVE / PARAM_RESET)
  *   - WRITE applies the value at once, but only in RAM: it is lost at power off.
@@ -38,7 +43,7 @@
  *   CRC, timeout) the update is cancelled and the board keeps working.
  *
  * Frame IDs (see can_update_proto.h)
- *   0x500 + node   sensor value, sent by this board every 100 ms
+ *   0x500 + node   sensor value, sent by this board every period (100 ms default)
  *   0x600          broadcast from the PC (only SCAN is accepted)
  *   0x600 + node   commands from the PC to this board
  *   0x680 + node   replies from this board to the PC
@@ -53,13 +58,14 @@
  *   it always has 6 bytes:
  *     bytes 0-1  value x 10 (int16, e.g. 325 = 32.5)
  *     bytes 2-3  voltage at the connector, in millivolts (uint16)
- *     byte  4    flags: bit0 sensor fault, bit1 low alarm, bit2 high alarm
- *                (the alarm bits are not filled yet)
+ *     byte  4    flags: bit0 sensor fault, bit1 low alarm, bit2 high alarm,
+ *                bit3 very low alarm (see gauge_alarm.h)
  *     byte  5    counter, grows at every frame
  *
  * Structure of the file
- *   Helpers -> Identity and heartbeat -> Details -> Actions -> Parameters
- *   -> Sensor frame -> Update -> Bus supervision and main task -> Start-up
+ *   Configuration -> Update state -> Helpers -> Identity and heartbeat
+ *   -> Details -> Actions -> Firmware update -> Parameters -> Sensor value
+ *   -> Bus supervision and main task -> Start-up
  */
 
 #include <string.h>
@@ -84,21 +90,40 @@
 #include "nvs.h"
 #include "gauge_cfg.h"          // name, unit, decimals, fault mode
 #include "gauge_alarm.h"        // alarms: threshold, hysteresis, delay
+
 /* ---------- Configuration ---------- */
 
 // CAN pins (connection to the CAN transceiver)
 #define CAN_TX_GPIO   48
 #define CAN_RX_GPIO   47
 
-// Identity of this node
-// Node ID: it is NOT fixed any more. It is read from the permanent memory (NVS) at
-// boot, so the same firmware can run on several boards, each with its own number.
-// A board that was never configured uses the default.
+// CAN bus speed, kbit/s. Fixed on purpose: all the boards of the car share the
+// same bus speed, and a speed changed over CAN could make the board unreachable
+// if it did not match the PC. To use another speed change this value and
+// rebuild; BusWrench must be set to the same speed.
+#define CAN_BITRATE_KBPS  500
+
+#if   CAN_BITRATE_KBPS == 125
+#define CAN_TIMING_CONFIG()  TWAI_TIMING_CONFIG_125KBITS()
+#elif CAN_BITRATE_KBPS == 250
+#define CAN_TIMING_CONFIG()  TWAI_TIMING_CONFIG_250KBITS()
+#elif CAN_BITRATE_KBPS == 500
+#define CAN_TIMING_CONFIG()  TWAI_TIMING_CONFIG_500KBITS()
+#elif CAN_BITRATE_KBPS == 1000
+#define CAN_TIMING_CONFIG()  TWAI_TIMING_CONFIG_1MBITS()
+#else
+#error "CAN_BITRATE_KBPS must be 125, 250, 500 or 1000"
+#endif
+
+// Identity of this node.
+// The node ID is read from the permanent memory (NVS) at boot, so the same
+// firmware runs on several boards, each with its own number. A board that was
+// never configured uses the default.
 #define NODE_ID_DEFAULT  0x45
 static uint8_t s_node_id   = NODE_ID_DEFAULT;   // ID in use now
 static uint8_t s_node_next = NODE_ID_DEFAULT;   // ID saved in NVS: used from the next boot
-#define NODE_ID  (s_node_id)                    // the rest of the file keeps using NODE_ID
-#define HW_REV        'A'           // hardware revision letter
+#define NODE_ID  (s_node_id)                    // ID used in the frame IDs
+#define HW_REV   'A'                            // hardware revision letter
 
 // Git hash and "uncommitted changes" flag, set by the project CMakeLists.txt.
 // If they are missing (build without git) the commit is shown as unavailable.
@@ -109,13 +134,15 @@ static uint8_t s_node_next = NODE_ID_DEFAULT;   // ID saved in NVS: used from th
 #define GIT_DIRTY 0
 #endif
 
-
 // Firmware version sent to the PC. It is NOT written here: it is read at
 // startup from PROJECT_VER ("MAJOR.MINOR.PATCH") set in the project
 // CMakeLists.txt, so the file and the board always show the same version.
 static uint8_t s_fw_major, s_fw_minor, s_fw_patch;
 
 static const char *TAG = "can_node";   // prefix of the log messages
+
+// Set at the first frame received from the bus (see can_node_bus_ok()).
+static volatile bool s_rx_seen = false;
 
 // Reads "MAJOR.MINOR.PATCH" from the version string baked into the image.
 // If the string has another format (e.g. a git hash) the result is 0.0.0.
@@ -318,8 +345,8 @@ static void send_detail_a(void)
     reply(a, sizeof(a));
 }
 
-// Internal temperature sensor of the ESP32-S3. It is started the first time
-// it is needed, so no other function has to be changed.
+// Internal temperature sensor of the ESP32-S3. It is installed the first time
+// the details are asked, so it costs nothing until then.
 static temperature_sensor_handle_t s_temp = NULL;
 static bool s_temp_tried = false;
 
@@ -683,7 +710,7 @@ static void on_finish(void)
     esp_restart();
 }
 
-/* ---------- Sensor parameters (read / write / save / factory) ---------- */
+/* ---------- Parameters (read / write / save / factory) ---------- */
 
 // Staging area of the calibration table. The points sent by the PC (one frame
 // each) are collected here; the table in use changes only when the PC writes the
@@ -744,7 +771,7 @@ static void on_param_read(const twai_message_t *m)
     case CANUPD_PAR_NODE_ID:
         send_param_value(param, 0, s_node_next);      // the ID saved (used from the next boot)
         break;
-     case CANUPD_PAR_NAME: {
+    case CANUPD_PAR_NAME: {
         // The name travels 4 bytes per frame: index 0, 1, 2.
         char t[16] = { 0 };
         gauge_cfg_get_name(t, sizeof(t));
@@ -786,7 +813,7 @@ static void on_param_read(const twai_message_t *m)
     case CANUPD_PAR_ALARM_STARTUP:
         send_param_value(param, 0, (uint32_t)gauge_alarm_get_startup_s());
         break;
-     case CANUPD_PAR_SENSOR_PERIOD:
+    case CANUPD_PAR_SENSOR_PERIOD:
         send_param_value(param, 0, (uint32_t)gauge_cfg_get_period_ms());
         break;
     default:
@@ -886,7 +913,7 @@ static void on_param_write(const twai_message_t *m)
     case CANUPD_PAR_FAULT_MODE:
         err = gauge_cfg_set_fault_mode((int)value);
         break;
-        // The set functions check the alarm number and the range of the value.
+    // Alarms: the set functions check the alarm number and the range of the value.
     case CANUPD_PAR_ALARM_ENABLE:
         err = gauge_alarm_set_enabled(index, (int)value);
         break;
@@ -948,7 +975,7 @@ static void on_param_reset(void)
 
 /* ---------- Sensor value (periodic data frame) ---------- */
 
-// Sends the value of the sensor, every 100 ms.
+// Sends the value of the sensor, every period (100 ms by default).
 //   byte 0-1: value in tenths of the unit (200 = 20.0 L), int16, little endian
 //   byte 2-3: voltage at the connector in millivolts, uint16, little endian
 //   byte 4  : flags: bit0 = sensor fault, bit1 = low alarm, bit2 = high alarm,
@@ -1002,6 +1029,24 @@ static void check_bus(void)
     }
 }
 
+// twai_receive() that also records that the bus delivered a frame.
+static esp_err_t receive_frame(twai_message_t *rx, TickType_t wait)
+{
+    esp_err_t e = twai_receive(rx, wait);
+    if (e == ESP_OK)
+        s_rx_seen = true;
+    return e;
+}
+
+// See can_node.h.
+bool can_node_bus_ok(void)
+{
+    twai_status_info_t s;
+    return s_rx_seen &&
+           twai_get_status_info(&s) == ESP_OK &&
+           s.state == TWAI_STATE_RUNNING;
+}
+
 // Main CAN task: receives frames, runs the commands, sends the heartbeat.
 static void can_task(void *arg)
 {
@@ -1011,7 +1056,7 @@ static void can_task(void *arg)
     while (1) {
         // Wait up to 10 ms for a frame; only standard data frames are used.
         twai_message_t rx;
-        if (twai_receive(&rx, pdMS_TO_TICKS(10)) == ESP_OK &&
+        if (receive_frame(&rx, pdMS_TO_TICKS(10)) == ESP_OK &&
             !rx.extd && !rx.rtr && rx.data_length_code >= 1) {
 
             if (rx.identifier == CANUPD_ID_DATA(NODE_ID)) {
@@ -1073,23 +1118,24 @@ static void can_task(void *arg)
 
 /* ---------- Start-up ---------- */
 
-// Called once from app_main(): reads the version, starts the CAN
-// controller at 500 kbit/s and creates the CAN task.
+// Called once from app_main(): reads the version and the settings, starts
+// the CAN controller at CAN_BITRATE_KBPS and creates the CAN task.
 void can_node_start(void)
 {
     load_version();           // fills s_fw_major / s_fw_minor / s_fw_patch
     load_node_id();           // node ID from the permanent memory (default 0x45)
     gauge_cfg_start();        // name, unit, decimals, fault mode from the permanent memory
     gauge_alarm_start();      // alarm settings from the permanent memory
+
     twai_general_config_t g = TWAI_GENERAL_CONFIG_DEFAULT(CAN_TX_GPIO, CAN_RX_GPIO, TWAI_MODE_NORMAL);
     g.rx_queue_len = 64;      // a block is 32 frames sent back to back: bigger queue
-    twai_timing_config_t  t = TWAI_TIMING_CONFIG_500KBITS();
+    twai_timing_config_t  t = CAN_TIMING_CONFIG();
     twai_filter_config_t  f = TWAI_FILTER_CONFIG_ACCEPT_ALL();   // filtering is done in can_task
 
     ESP_ERROR_CHECK(twai_driver_install(&g, &t, &f));
     ESP_ERROR_CHECK(twai_start());
-    ESP_LOGI(TAG, "CAN started at 500 kbit/s, node 0x%02X, FW %u.%u.%u",
-             NODE_ID, s_fw_major, s_fw_minor, s_fw_patch);
+    ESP_LOGI(TAG, "CAN started at %d kbit/s, node 0x%02X, FW %u.%u.%u",
+             CAN_BITRATE_KBPS, NODE_ID, s_fw_major, s_fw_minor, s_fw_patch);
 
     xTaskCreate(can_task, "can_task", 6144, NULL, 5, NULL);   // stack 6 KB, priority 5
 }

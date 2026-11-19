@@ -32,24 +32,24 @@ NS_ :
 
 BS_:
 
-BU_: PC DASHBOARD PDM_FRONT PDM_REAR KEYPAD
+BU_: PC GAUGE PDM_FRONT PDM_REAR KEYPAD
 
 BO_ 1536 CMD_BROADCAST: 8 PC
  SG_ MsgType M : 0|8@1+ (1,0) [0|255] "" Vector__XXX
 
-BO_ 1605 CMD_DASHBOARD: 8 PC
- SG_ MsgType M : 0|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ FileSize m16 : 8|32@1+ (1,0) [0|4294967295] "bytes" DASHBOARD
- SG_ FileCrc32 m17 : 8|32@1+ (1,0) [0|4294967295] "" DASHBOARD
- SG_ BlockNumber m18 : 8|16@1+ (1,0) [0|65535] "" DASHBOARD
- SG_ BlockLength m18 : 24|16@1+ (1,0) [0|65535] "bytes" DASHBOARD
- SG_ ReadParam m48 : 8|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ ReadIndex m48 : 16|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ WriteParam m49 : 8|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ WriteIndex m49 : 16|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ WriteValue m49 : 32|32@1+ (1,0) [0|4294967295] "" DASHBOARD
+BO_ 1605 CMD_GAUGE: 8 PC
+ SG_ MsgType M : 0|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ FileSize m16 : 8|32@1+ (1,0) [0|4294967295] "bytes" GAUGE
+ SG_ FileCrc32 m17 : 8|32@1+ (1,0) [0|4294967295] "" GAUGE
+ SG_ BlockNumber m18 : 8|16@1+ (1,0) [0|65535] "" GAUGE
+ SG_ BlockLength m18 : 24|16@1+ (1,0) [0|65535] "bytes" GAUGE
+ SG_ ReadParam m48 : 8|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ ReadIndex m48 : 16|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ WriteParam m49 : 8|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ WriteIndex m49 : 16|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ WriteValue m49 : 32|32@1+ (1,0) [0|4294967295] "" GAUGE
 
-BO_ 1733 REPLY_DASHBOARD: 8 DASHBOARD
+BO_ 1733 REPLY_GAUGE: 8 GAUGE
  SG_ MsgType M : 0|8@1+ (1,0) [0|255] "" PC
  SG_ HbState m128 : 8|8@1+ (1,0) [0|255] "" PC
  SG_ HbFwMajor m128 : 16|8@1+ (1,0) [0|255] "" PC
@@ -102,17 +102,17 @@ BO_ 1733 REPLY_DASHBOARD: 8 DASHBOARD
  SG_ PackParam m177 : 16|8@1+ (1,0) [0|255] "" PC
  SG_ PackStatus m177 : 24|8@1+ (1,0) [0|255] "" PC
 
-BO_ 1861 DATA_DASHBOARD: 8 PC
- SG_ Data0 : 0|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ Data1 : 8|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ Data2 : 16|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ Data3 : 24|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ Data4 : 32|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ Data5 : 40|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ Data6 : 48|8@1+ (1,0) [0|255] "" DASHBOARD
- SG_ Data7 : 56|8@1+ (1,0) [0|255] "" DASHBOARD
+BO_ 1861 DATA_GAUGE: 8 PC
+ SG_ Data0 : 0|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ Data1 : 8|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ Data2 : 16|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ Data3 : 24|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ Data4 : 32|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ Data5 : 40|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ Data6 : 48|8@1+ (1,0) [0|255] "" GAUGE
+ SG_ Data7 : 56|8@1+ (1,0) [0|255] "" GAUGE
 
-BO_ 1349 SENSOR_DASHBOARD: 6 DASHBOARD
+BO_ 1349 SENSOR_GAUGE: 6 GAUGE
  SG_ SensorValue : 0|16@1- (0.1,0) [-3276.8|3276.7] "" PC
  SG_ SensorMv : 16|16@1+ (1,0) [0|65535] "mV" PC
  SG_ FlagFault : 32|1@1+ (1,0) [0|1] "" PC
@@ -241,15 +241,23 @@ BO_ 1825 DATA_KEYPAD: 8 PC
  SG_ Data6 : 48|8@1+ (1,0) [0|255] "" KEYPAD
  SG_ Data7 : 56|8@1+ (1,0) [0|255] "" KEYPAD
 
+CM_ BU_ PC "BusWrench on the PC, through a PCAN-USB adapter. CAN 500 kbit/s, standard 11-bit IDs.";
+CM_ BU_ GAUGE "CAN_GAUGE (ESP32-S3), node 0x45 (default). With more gauges, each one has its own node ID and its own set of messages: CMD 0x600 + node, REPLY 0x680 + node, DATA 0x700 + node, SENSOR 0x500 + node.";
+CM_ BU_ PDM_FRONT "Front PDM (STM32), node 0x30.";
+CM_ BU_ PDM_REAR "Rear PDM (STM32), node 0x31.";
+CM_ BU_ KEYPAD "Keypad, node 0x21.";
 CM_ BO_ 1536 "PC to all boards. Only SCAN (MsgType 1) is accepted in broadcast.";
-CM_ BO_ 1605 "PC to Dashboard (ESP32-S3): commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT, 32 DETAILS, 33 REBOOT, 34 IDENTIFY, 35 ROLLBACK, 48 PARAM_READ, 49 PARAM_WRITE, 50 PARAM_SAVE, 51 PARAM_RESET.";
-CM_ BO_ 1733 "Dashboard (ESP32-S3) to PC: heartbeat, scan answers (INFO_A, INFO_B), update answers, details (DETAIL_A..PART_B), action answer and parameter answers.";
+CM_ BO_ 1605 "PC to CAN_GAUGE (ESP32-S3): commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT, 32 DETAILS, 33 REBOOT, 34 IDENTIFY, 35 ROLLBACK, 48 PARAM_READ, 49 PARAM_WRITE, 50 PARAM_SAVE, 51 PARAM_RESET.";
+CM_ BO_ 1733 "CAN_GAUGE (ESP32-S3) to PC: heartbeat, scan answers (INFO_A, INFO_B), update answers, details (DETAIL_A..PART_B), action answer and parameter answers.";
 CM_ SG_ 1733 HwRevision "Hardware revision as an ASCII letter (65 = A, 66 = B).";
 CM_ SG_ 1733 AckBlock "Number of the block confirmed (or refused) by the board.";
-CM_ BO_ 1349 "Dashboard (ESP32-S3) to PC: sensor value, sent by the board by itself every 100 ms (20..500 ms). No command byte. Not sent during a firmware update.";
+CM_ BO_ 1349 "CAN_GAUGE (ESP32-S3) to all: sensor value, sent by the board by itself every 100 ms (20..500 ms, parameter SENSOR_PERIOD). No command byte. Not sent during a firmware update.";
 CM_ SG_ 1349 SensorValue "Value in the unit of the gauge (tenths on the bus). -0.1 (FF FF) = no valid value yet.";
 CM_ SG_ 1349 SensorMv "Voltage at the connector.";
 CM_ SG_ 1349 FlagFault "Sensor in fault (wire cut, short to ground, short to 5 V). All the alarms are off.";
+CM_ SG_ 1349 FlagLowAlarm "Low alarm active (threshold, hysteresis and delay set from BusWrench).";
+CM_ SG_ 1349 FlagHighAlarm "High alarm active.";
+CM_ SG_ 1349 FlagVeryLowAlarm "Very low alarm active.";
 CM_ SG_ 1349 FrameCounter "Grows at every frame (0..255): it stops if the board stops.";
 CM_ SG_ 1733 TempC "-128 = not available.";
 CM_ SG_ 1733 PartFlags "bit0 = running now, bit1 = starts at next boot, bit2 = valid image found.";
@@ -259,22 +267,26 @@ CM_ SG_ 1733 PartVerMajor "255 = no firmware in the slot.";
 CM_ SG_ 1733 GitDirty "1 = the firmware was built with uncommitted changes.";
 CM_ SG_ 1733 ValValue "Value of the parameter, 4 bytes little endian. Numbers with decimals are multiplied by 10.";
 CM_ SG_ 1605 WriteValue "New value of the parameter, 4 bytes little endian. Numbers with decimals are multiplied by 10.";
-CM_ BO_ 1861 "File data for Dashboard (ESP32-S3): 8 raw bytes per frame, 32 frames per block of 256 bytes.";
-CM_ BO_ 1584 "PC to PDM Anteriore (STM32): commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT.";
-CM_ BO_ 1712 "PDM Anteriore (STM32) to PC: heartbeat, scan answers (INFO_A, INFO_B) and update answers.";
+CM_ BO_ 1861 "File data for the CAN_GAUGE (ESP32-S3): 8 raw bytes per frame, 32 frames per block of 256 bytes.";
+CM_ BO_ 1584 "PC to front PDM (STM32): commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT.";
+CM_ BO_ 1712 "Front PDM (STM32) to PC: heartbeat, scan answers (INFO_A, INFO_B) and update answers.";
 CM_ SG_ 1712 HwRevision "Hardware revision as an ASCII letter (65 = A, 66 = B).";
 CM_ SG_ 1712 AckBlock "Number of the block confirmed (or refused) by the board.";
-CM_ BO_ 1840 "File data for PDM Anteriore (STM32): 8 raw bytes per frame, 32 frames per block of 256 bytes.";
-CM_ BO_ 1585 "PC to PDM Posteriore (STM32): commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT.";
-CM_ BO_ 1713 "PDM Posteriore (STM32) to PC: heartbeat, scan answers (INFO_A, INFO_B) and update answers.";
+CM_ BO_ 1840 "File data for the front PDM (STM32): 8 raw bytes per frame, 32 frames per block of 256 bytes.";
+CM_ BO_ 1585 "PC to rear PDM (STM32): commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT.";
+CM_ BO_ 1713 "Rear PDM (STM32) to PC: heartbeat, scan answers (INFO_A, INFO_B) and update answers.";
 CM_ SG_ 1713 HwRevision "Hardware revision as an ASCII letter (65 = A, 66 = B).";
 CM_ SG_ 1713 AckBlock "Number of the block confirmed (or refused) by the board.";
-CM_ BO_ 1841 "File data for PDM Posteriore (STM32): 8 raw bytes per frame, 32 frames per block of 256 bytes.";
-CM_ BO_ 1569 "PC to Tastierino: commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT.";
-CM_ BO_ 1697 "Tastierino to PC: heartbeat, scan answers (INFO_A, INFO_B) and update answers.";
+CM_ BO_ 1841 "File data for the rear PDM (STM32): 8 raw bytes per frame, 32 frames per block of 256 bytes.";
+CM_ BO_ 1569 "PC to keypad: commands. MsgType 1 SCAN, 16 BEGIN, 17 CRC, 18 BLOCK_END, 19 FINISH, 20 ABORT, 21 ENTER_BOOT.";
+CM_ BO_ 1697 "Keypad to PC: heartbeat, scan answers (INFO_A, INFO_B) and update answers.";
 CM_ SG_ 1697 HwRevision "Hardware revision as an ASCII letter (65 = A, 66 = B).";
 CM_ SG_ 1697 AckBlock "Number of the block confirmed (or refused) by the board.";
-CM_ BO_ 1825 "File data for Tastierino: 8 raw bytes per frame, 32 frames per block of 256 bytes.";
+CM_ BO_ 1825 "File data for the keypad: 8 raw bytes per frame, 32 frames per block of 256 bytes.";
+
+BA_DEF_ BO_ "GenMsgCycleTime" INT 0 65535;
+BA_DEF_DEF_ "GenMsgCycleTime" 0;
+BA_ "GenMsgCycleTime" BO_ 1349 100;
 
 VAL_ 1536 MsgType 1 "SCAN" ;
 VAL_ 1605 MsgType 1 "SCAN" 16 "BEGIN" 17 "CRC" 18 "BLOCK_END" 19 "FINISH" 20 "ABORT" 21 "ENTER_BOOT" 32 "DETAILS" 33 "REBOOT" 34 "IDENTIFY" 35 "ROLLBACK" 48 "PARAM_READ" 49 "PARAM_WRITE" 50 "PARAM_SAVE" 51 "PARAM_RESET" ;
@@ -295,6 +307,9 @@ VAL_ 1733 ActionCmd 33 "REBOOT" 34 "IDENTIFY" 35 "ROLLBACK" ;
 VAL_ 1733 ActionResult 0 "OK" 1 "FAILED" ;
 VAL_ 1733 ResetCode 0 "UNKNOWN" 1 "POWER_ON" 2 "EXTERNAL" 3 "SOFTWARE" 4 "CRASH" 5 "WATCHDOG" 6 "BROWNOUT" 7 "OTHER" ;
 VAL_ 1349 FlagFault 0 "OK" 1 "FAULT" ;
+VAL_ 1349 FlagLowAlarm 0 "OFF" 1 "ACTIVE" ;
+VAL_ 1349 FlagHighAlarm 0 "OFF" 1 "ACTIVE" ;
+VAL_ 1349 FlagVeryLowAlarm 0 "OFF" 1 "ACTIVE" ;
 VAL_ 1584 MsgType 1 "SCAN" 16 "BEGIN" 17 "CRC" 18 "BLOCK_END" 19 "FINISH" 20 "ABORT" 21 "ENTER_BOOT" ;
 VAL_ 1712 MsgType 128 "HEARTBEAT" 129 "INFO_A" 130 "INFO_B" 144 "BEGIN_ACK" 146 "BLOCK_ACK" 147 "FINISH_ACK" 149 "BOOT_ACK" ;
 VAL_ 1712 HbState 0 "APPLICATION" 1 "UPDATE_IN_PROGRESS" ;

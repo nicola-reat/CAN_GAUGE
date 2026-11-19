@@ -11,7 +11,8 @@
  *       content (gauge_display_start), first frame drawn at once;
  *     - backlight fade-in, so the panel memory is never visible at power on,
  *       then the power-on sweep of the ring (gauge_display_sweep);
- *     - confirmation of a new firmware after a few seconds (app rollback).
+ *     - check of a new firmware (app rollback): it is confirmed only when CAN,
+ *       sensor and display are working, otherwise the previous one is restored.
  *
  *   board_identify() is also defined here: it is called by can_node.c when
  *   the "Identify board" button of BusWrench is pressed.
@@ -33,35 +34,18 @@
 #include "lvgl.h"
 #include "ST77916.h"                // display driver: LCD_Init(), panel handles, backlight
 #include "ui.h"                     // SquareLine export: ui_init()
-#include "can_node.h"               // can_node_start()
-#include "adc_sensor.h"             // adc_sensor_start()
+#include "can_node.h"               // can_node_start(), can_node_bus_ok()
+#include "adc_sensor.h"             // adc_sensor_start(), adc_sensor_get_mv()
 #include "gauge_cfg.h"              // gauge_cfg_get_name(), shown by board_identify()
 #include "gauge_display.h"          // gauge_display_start(), gauge_display_sweep()
 
 static const char *TAG = "main";
 
-#define CONFIRM_DELAY_MS   5000     // run time before a new firmware is confirmed
+#define CONFIRM_TIMEOUT_MS 120000   // time given to a new firmware to prove it works
+#define CONFIRM_POLL_MS    500      // how often the conditions are checked
 #define FIRST_FRAME_MS     100      // time left to the LVGL task for the first frame
 #define FADE_STEP          4        // backlight step of the fade-in, percent
 #define FADE_STEP_MS       10       // time per step (one FreeRTOS tick at 100 Hz)
-
-/* ---------- Firmware confirmation (app rollback) ---------- */
-
-// After an OTA update the new firmware starts in the "pending verify" state.
-// If the board resets before it is confirmed, the bootloader goes back to the
-// previous firmware: a firmware that crashes at start-up cannot brick the board.
-// Nothing is done after a USB flash or when the firmware is already confirmed.
-static void confirm_firmware(void)
-{
-    const esp_partition_t *run = esp_ota_get_running_partition();
-    esp_ota_img_states_t state;
-
-    if (esp_ota_get_state_partition(run, &state) == ESP_OK &&
-        state == ESP_OTA_IMG_PENDING_VERIFY) {
-        esp_ota_mark_app_valid_cancel_rollback();
-        ESP_LOGI(TAG, "New firmware confirmed");
-    }
-}
 
 /* ---------- Identify (BusWrench "Identify board") ---------- */
 
@@ -117,6 +101,49 @@ void board_identify(bool on)
     }
 
     lvgl_port_unlock();
+}
+
+/* ---------- New firmware check (app rollback) ---------- */
+
+// True when the board works well enough to be updated again over CAN:
+// CAN running and at least one frame received, sensor task reading (a sensor
+// fault is fine: the task runs), user interface started.
+static bool board_ok(void)
+{
+    return can_node_bus_ok() && adc_sensor_get_mv() >= 0 && s_ui_ready;
+}
+
+// After an OTA update the new firmware starts in the "pending verify" state.
+// It is confirmed only once board_ok() is true. If that does not happen within
+// CONFIRM_TIMEOUT_MS the firmware marks itself invalid and reboots: the
+// bootloader starts the previous firmware again, so a firmware that cannot
+// talk on the bus never stays on the board.
+// Nothing is done after a USB flash or when the firmware is already confirmed.
+static void check_new_firmware(void)
+{
+    const esp_partition_t *run = esp_ota_get_running_partition();
+    esp_ota_img_states_t state;
+
+    if (esp_ota_get_state_partition(run, &state) != ESP_OK ||
+        state != ESP_OTA_IMG_PENDING_VERIFY)
+        return;
+
+    ESP_LOGI(TAG, "New firmware on trial: waiting for CAN, sensor and display (max %d s)",
+             CONFIRM_TIMEOUT_MS / 1000);
+
+    for (int t = 0; t < CONFIRM_TIMEOUT_MS; t += CONFIRM_POLL_MS) {
+        if (board_ok()) {
+            esp_ota_mark_app_valid_cancel_rollback();
+            ESP_LOGI(TAG, "New firmware confirmed after %d ms", t);
+            return;
+        }
+        vTaskDelay(pdMS_TO_TICKS(CONFIRM_POLL_MS));
+    }
+
+    ESP_LOGE(TAG, "New firmware not working (CAN %s, sensor %s, display %s): rollback",
+             can_node_bus_ok() ? "ok" : "NO", adc_sensor_get_mv() >= 0 ? "ok" : "NO",
+             s_ui_ready ? "ok" : "NO");
+    esp_ota_mark_app_invalid_rollback_and_reboot();     // does not return
 }
 
 /* ---------- Entry point ---------- */
@@ -176,10 +203,8 @@ void app_main(void)
     gauge_display_sweep();
     lvgl_port_unlock();
 
-    // Everything is running: confirm a new firmware once it has been stable
-    // for a few seconds.
-    vTaskDelay(pdMS_TO_TICKS(CONFIRM_DELAY_MS));
-    confirm_firmware();
+    // A new firmware is confirmed only when it proves it works (see above).
+    check_new_firmware();
 
     // app_main() may return: ESP-IDF deletes the main task and frees its
     // stack, while the CAN, sensor and LVGL tasks keep running.
